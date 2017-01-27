@@ -40,4 +40,4 @@ Comments, suggestions and bug reports are most welcome!
 --[ License ]--
 
 SimpleCalc is provided under the MIT license. In essence, do what you will
-with this software, but please give credit to the original author.
+with this software, but please give credit to the original author, guildworks [https://mods.curse.com/members/guildworks].
