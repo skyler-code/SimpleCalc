@@ -1,4 +1,4 @@
-SimpleCalc - Copyright (c) 2008 GuildWorks.co.uk
+SimpleCalc - Copyright (c) 2017
 
 --[ Description ]--
 
@@ -12,14 +12,12 @@ Example usage and response:
 
 A selection of in-game values has been added to make life easier when doing certain calculations. You can use keywords in place of numbers for the following values:
 
-* honour / honor - Total honour points available to spend
-* justice (or jp) - Total justice points available to spend
-* valor (or vp) - Total valor points available to spend
-* conquest (or cp) - Total conquest points available to spend
-* vpcap - Amount of valor that can be earned that week
-* cpcap - Amount of conquest that can be earned that week
-* achieves (or ap) - Your total achieve points
-* health - Your maximum Health points
+* honour / honor - Honor points at current level
+* maxhonor / maxhonour - Honor required to reach next level
+* achieves - Your total achieve points
+* artifactpower (or ap) - Artifact Power at current level
+* artifactpowermax (or apmax) - Artifact Power required to level
+* health (or hp) - Your maximum Health points
 * mana (or power) - Your maximum Mana, Rage, Focus, Energy, or Runic Power
 * gold - Total gold (1g 50s would be displayed as 1.5 gold)
 * silver - Total silver (1g 50s would be displayed as 150 silver)

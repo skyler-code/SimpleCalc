@@ -1,8 +1,8 @@
-## Interface: 60000
+## Interface: 70100
 ## Title: SimpleCalc
 ## Notes: A simple mathematical calculator. Type /calc for help!
 ## SavedVariables: calcVariables
-## Author: guildworks (Updated by Bruescrues)
-## Version: 0.7
+## Author: guildworks (Updated by deathdude)
+## Version: 0.8
 SimpleCalc.lua
 SimpleCalc.xml

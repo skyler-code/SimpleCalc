@@ -1,5 +1,8 @@
 -- Initialise SimpleCalc
 scversion = GetAddOnMetadata("SimpleCalc", "Version");
+local GetEquippedArtifactInfo = _G.C_ArtifactUI.GetEquippedArtifactInfo
+local GetCostForPointAtRank = _G.C_ArtifactUI.GetCostForPointAtRank
+
 function SimpleCalc_OnLoad(self)
 
   -- Register our slash commands
@@ -14,9 +17,6 @@ function SimpleCalc_OnLoad(self)
 
   -- Let the user know that we're here
   DEFAULT_CHAT_FRAME:AddMessage("[+] SimpleCalc (v "..scversion..") initiated! Type: /calc for help.", 1, 1, 1);
-
-  -- Request Conquest Point info from server
-  RequestPVPRewards()
 end
 
 -- Parse any user-passed parameters
@@ -29,13 +29,6 @@ function SimpleCalc_ParseParameters(paramStr)
   local b=nil;
   local result=0;
   local paramCount=0;
-  local GetArenaCurrency = function() return select(2,GetCurrencyInfo(390)) or 0 end
-  local GetHonorCurrency = function() return select(2,GetCurrencyInfo(392)) or 0 end
-  local GetJusticeCurrency = function() return select(2,GetCurrencyInfo(395)) or 0 end
-  local GetValorCurrency = function() return select(2,GetCurrencyInfo(396)) or 0 end
-  local GetValorCap = function() return select(5,GetCurrencyInfo(396))/100 - select(4,GetCurrencyInfo(396)) or 0 end
-  local GetArenaCap = function() return select(2,GetPVPRewards()) - select(1,GetPVPRewards()) or 0 end
-  RequestPVPRewards()
 
   paramStr=string.lower(paramStr);
   for param in string.gmatch(paramStr, "[^%s]+") do
@@ -52,21 +45,13 @@ function SimpleCalc_ParseParameters(paramStr)
       -- Check whether we have a number
       if (string.match(param, '[^%d\.-]')) then
         -- If we have something other than a number, see whether it's a recognised game value
-        if (param=='honour' or param=='honor') then
-          param=GetHonorCurrency();
-        elseif (param=='conquest' or param=='cp') then
-          param=GetArenaCurrency();
-		elseif (param=='jp' or param=='justice') then
-		  param=GetJusticeCurrency();
-		elseif (param=='valor' or param=='vp') then
-		  param=GetValorCurrency();
-		elseif (param=='vpcap') then
-		  param=GetValorCap();
-		elseif (param=='cpcap') then
-		  param=GetArenaCap();
-		elseif (param=='achieves' or param=='ap') then
+        if (param=='achieves') then
 		  param=GetTotalAchievementPoints();
-        elseif (param=='health') then
+		elseif (param=='honor' or param=='honour') then
+		  param=UnitHonor('player');
+		elseif (param=='maxhonor' or param=='maxhonour') then
+		  param=UnitHonorMax('player');
+        elseif (param=='health' or param=='hp') then
           param=UnitHealthMax('player')
         elseif (param=='power' or param=='mana') then
           param=UnitPowerMax('player')
@@ -76,6 +61,10 @@ function SimpleCalc_ParseParameters(paramStr)
           param=GetMoney() / 100;
         elseif (param=='gold') then
           param=GetMoney() / 10000;
+		elseif (param=='artifactpower' or param=='ap') then
+		  param=getAPInfo("totalXP");
+		elseif (param=='artifactpowermax' or param=='apmax') then
+		  param=getAPInfo("nextRankCost");
         elseif (calcVariables[param]) then  -- Check whether this is a user defined variable
           param=calcVariables[param];
         end
@@ -169,6 +158,23 @@ function SimpleCalc_ParseParameters(paramStr)
 
 end
 
+function getAPInfo(ap)
+	local itemID, altItemID, name, icon, totalXP, pointsSpent = GetEquippedArtifactInfo()
+	local pointsAvailable = 0
+	local nextRankCost = GetCostForPointAtRank(pointsSpent + pointsAvailable) or 0
+    while totalXP >= nextRankCost  do
+      totalXP = totalXP - nextRankCost
+      pointsAvailable = pointsAvailable + 1
+      nextRankCost = GetCostForPointAtRank(pointsSpent + pointsAvailable) or 0
+	end
+	
+	if(ap == "totalXP") then
+	  return totalXP;
+	elseif(ap=="nextRankCost") then
+	  return nextRankCost;
+	end
+end
+
 
 -- Inform the user of our their options
 function SimpleCalc_Usage()
@@ -176,7 +182,7 @@ function SimpleCalc_Usage()
   SimpleCalc_Message("Usage: /calc <value> <symbol> <value>");
   SimpleCalc_Message("Usage: /calc <variable> = <value>");
   SimpleCalc_Message("Example: 1650 + 2200 - honor (note the spaces)");
-  SimpleCalc_Message("value - A numeric or game value (honor, conquest, valor, justice, health, mana (or power), copper, silver, gold)");
+  SimpleCalc_Message("value - A numeric or game value (honor, maxhonor, artifactpower, artifactpowermax, health, mana (or power), copper, silver, gold)");
   SimpleCalc_Message("symbol - A mathematical symbol (+, -, /, *, ^)");
   SimpleCalc_Message("variable - A name to store a value under for future use");
 end
@@ -204,3 +210,4 @@ function numberFormat(amount)
   end
   return formatted;
 end
+
