@@ -3,6 +3,7 @@
 ## Notes: A simple mathematical calculator. Type /calc for help!
 ## SavedVariables: calcVariables
 ## Author: guildworks (Updated by deathdude)
-## Version: 0.8
+## Version: 1.0
 SimpleCalc.lua
 SimpleCalc.xml
+EvalExpression.lua
