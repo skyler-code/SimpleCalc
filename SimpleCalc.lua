@@ -102,6 +102,7 @@ function SimpleCalc_ParseParameters(paramStr)
 	paramEval = paramEval:gsub("artifactpowermax",getAPInfo("nextRankCost"));
 	paramEval = paramEval:gsub("artifactpower",getAPInfo("totalXP"));
 	paramEval = paramEval:gsub("apmax",getAPInfo("nextRankCost"));
+	paramEval = paramEval:gsub("ap",getAPInfo("totalXP"));
 	paramEval = paramEval:gsub("xpmax",UnitXPMax('player'));
 	paramEval = paramEval:gsub("xp",UnitXP('player'));
 	for i,calcVar in pairs(calcVariables) do
