@@ -99,10 +99,9 @@ function SimpleCalc_ParseParameters(paramStr)
 	paramEval = paramEval:gsub("copper",GetMoney());
 	paramEval = paramEval:gsub("silver",GetMoney() / 100);
 	paramEval = paramEval:gsub("gold",GetMoney() / 10000);
-	paramEval = paramEval:gsub("artifactpowermax",GetTotalAchievementPoints());
+	paramEval = paramEval:gsub("artifactpowermax",getAPInfo("nextRankCost"));
 	paramEval = paramEval:gsub("artifactpower",getAPInfo("totalXP"));
-	paramEval = paramEval:gsub("apmax",GetTotalAchievementPoints());
-	paramEval = paramEval:gsub("ap",getAPInfo("nextRankCost"));
+	paramEval = paramEval:gsub("apmax",getAPInfo("nextRankCost"));
 	paramEval = paramEval:gsub("xpmax",UnitXPMax('player'));
 	paramEval = paramEval:gsub("xp",UnitXP('player'));
 	for i,calcVar in pairs(calcVariables) do
