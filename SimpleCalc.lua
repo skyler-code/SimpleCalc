@@ -159,6 +159,9 @@ function SimpleCalc_ParseParameters(paramStr)
 end
 
 function getAPInfo(ap)
+	if(GetEquippedArtifactInfo() == nil) then
+		return 0;
+	end
 	local itemID, altItemID, name, icon, totalXP, pointsSpent = GetEquippedArtifactInfo()
 	local pointsAvailable = 0
 	local nextRankCost = GetCostForPointAtRank(pointsSpent + pointsAvailable) or 0
