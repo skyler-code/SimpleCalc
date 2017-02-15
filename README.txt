@@ -28,9 +28,11 @@ For example:
 /calc 1650 + 2200 - honour
 [SimpleCalc] 1650 + 2200 - honour = 3078
 
-SimpleCalc works on equations left to right, so '10 * 3 + 2' would be broken
-down into two sums: '10 * 3', then '30 + 2'. Support for brackets is not yet
-in place, but this shouldn't affect every day calculations.
+SimpleCalc utilizes an expression evaluator written by computer scientist, John Pormann. The expression evaluator is a Lua interpretation of the shunting yard algorithm.
+This allows you to use advanced math expressions.
+
+For example: (Assume you have 100,000 gold)
+/calc 
 
 Comments, suggestions and bug reports are most welcome!
 

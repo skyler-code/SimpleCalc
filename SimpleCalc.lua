@@ -76,7 +76,6 @@ function SimpleCalc_ParseParameters(paramStr)
 					end
 					addVar = false; -- This means there were no errors, so we'll reset.
 				end
-			
 			end
 		end
 	end
@@ -99,30 +98,41 @@ function SimpleCalc_ParseParameters(paramStr)
 	paramEval = paramEval:gsub("copper",GetMoney());
 	paramEval = paramEval:gsub("silver",GetMoney() / 100);
 	paramEval = paramEval:gsub("gold",GetMoney() / 10000);
-	paramEval = paramEval:gsub("artifactpowermax",getAPInfo("nextRankCost"));
-	paramEval = paramEval:gsub("artifactpower",getAPInfo("totalXP"));
-	paramEval = paramEval:gsub("apmax",getAPInfo("nextRankCost"));
-	paramEval = paramEval:gsub("ap",getAPInfo("totalXP"));
-	paramEval = paramEval:gsub("xpmax",UnitXPMax('player'));
+	
+	local tXP, nRC = getAPInfo();
+	paramEval = paramEval:gsub("maxartifactpower",nRC);
+	paramEval = paramEval:gsub("artifactpower",tXP);
+	paramEval = paramEval:gsub("maxap",nRC);
+	paramEval = paramEval:gsub("ap",tXP);
+	
+	paramEval = paramEval:gsub("maxxp",UnitXPMax('player'));
 	paramEval = paramEval:gsub("xp",UnitXP('player'));
+	
 	for i,calcVar in pairs(calcVariables) do
 		if(calcVar[1] and calcVar[2]) then
 			paramEval = paramEval:gsub(calcVar[1],calcVar[2]);
 		end
 	end
 	
+	
+	
 	if(string.match(paramEval, "[a-zA-Z]+")) then 
 		SimpleCalc_Error("Unrecognized variable!");
 		SimpleCalc_Error(paramEval);
 		return;
 	end
-	local result = evalString( paramEval, nil );
+	local result = evalMath( string.gsub( paramEval, "%s+", "" ) );
+	
+	--[[for param in string.gmatch(result, "[+][a-zA-Z1-9]") do
+		print(param) -- TODO Figure out how to get first letter of string out
+	end]]
+	
 	SimpleCalc_Message(paramStr.." = "..result);
 end
 
-function getAPInfo(ap)
-	if(GetEquippedArtifactInfo() == nil) then
-		return 0;
+function getAPInfo()
+	if(GetEquippedArtifactInfo() == nil) then -- Player doesn't have an artifact equipped, return 0
+		return 0, 0;
 	end
 	local itemID, altItemID, name, icon, totalXP, pointsSpent = GetEquippedArtifactInfo()
 	local pointsAvailable = 0
@@ -133,11 +143,7 @@ function getAPInfo(ap)
 		nextRankCost = GetCostForPointAtRank(pointsSpent + pointsAvailable) or 0
 	end
 	
-	if(ap == "totalXP") then
-		return totalXP;
-	elseif(ap=="nextRankCost") then
-		return nextRankCost;
-	end
+	return totalXP, nextRankCost;
 end
 
 -- Inform the user of our their options
@@ -145,9 +151,9 @@ function SimpleCalc_Usage()
 	SimpleCalc_Message("SimpleCalc (v"..scversion..") - Simple mathematical calculator");
 	SimpleCalc_Message("Usage: /calc <value> <symbol> <value>");
 	SimpleCalc_Message("Usage: /calc addvar <variable> = <value>");
-	SimpleCalc_Message("Example: 1650 + 2200 - honor (note the spaces)");
+	SimpleCalc_Message("Example: 1650 + 2200 - honor");
 	SimpleCalc_Message("value - A numeric or game value (honor, maxhonor, artifactpower, artifactpowermax, health, mana (or power), copper, silver, gold)");
-	SimpleCalc_Message("symbol - A mathematical symbol (+, -, /, *, ^)");
+	SimpleCalc_Message("symbol - A mathematical symbol (+, -, /, *)");
 	SimpleCalc_Message("variable - A name to store a value under for future use");
 end
 
