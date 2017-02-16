@@ -121,11 +121,10 @@ function SimpleCalc_ParseParameters(paramStr)
 		SimpleCalc_Error(paramEval);
 		return;
 	end
-	local result = evalMath( string.gsub( paramEval, "%s+", "" ) );
 	
-	--[[for param in string.gmatch(result, "[+][a-zA-Z1-9]") do
-		print(param) -- TODO Figure out how to get first letter of string out
-	end]]
+	paramEval = paramEval:gsub("%s+", ""); -- Clean up whitespace
+	
+	local result = evalMath( paramEval );
 	
 	SimpleCalc_Message(paramStr.." = "..result);
 end

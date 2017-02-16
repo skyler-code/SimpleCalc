@@ -71,11 +71,13 @@ local fcn_table = {
 	max = math.max
 }
 
+local debugging = true;
+
 -- evalMath assumes all tokens in text-string are numbers!
 function evalMath( text )
 	-- make a copy of the string, so we don't corrupt the original
 	local output = string.rep( text, 1 )
-	--dprint( 15, "math-eval ["..output.."]" )
+	dprint( 15, "math-eval ["..output.."]" )
 
 	local i, j, a,b,c
 		
@@ -84,7 +86,7 @@ function evalMath( text )
 	-- this also removes some parens which would otherwise be parsed below
 	i, j, a,b = string.find( output, "(%a+)%((.-)%)" )
 	while( i ~= nil ) do
-		--dprint( 15, "found fcn at "..i..","..j.."["..a.."|"..b.."]" )
+		dprint( 15, "found fcn at "..i..","..j.."["..a.."|"..b.."]" )
 		local nargs = 0
 		if( b:len() > 0 ) then
 			nargs = 1
@@ -127,16 +129,15 @@ function evalMath( text )
 		
 		i, j, a,b = string.find( output, "(%a+)%((.-)%)" )
 	end
-	
 
 	-- TODO: then, look for unary negation (e.g. -5)
 
 	-- next, do parens
 	i, j, a = string.find( output, "%((.-)%)" )
 	while( i ~= nil ) do
-		--dprint( 15, "found () at "..i..","..j.."["..a.."]" )
+		dprint( 15, "found () at "..i..","..j.."["..a.."]" )
 		local val = evalMath( a )
-		--dprint( 17, "  val = "..val )
+		dprint( 17, "  val = "..val )
 		output = output:sub(1,i-1) .. val .. output:sub(j+1)
 
 		i, j, a = string.find( output, "%((.-)%)" )
@@ -147,7 +148,7 @@ function evalMath( text )
 	-- next, do mpy, div, mod
 	i, j, a,b,c = string.find( output, "(%-*[0-9%.]+)([%*%/%%])(%-*[0-9%.]+)" )
 	while( i ~= nil ) do
-		--dprint( 15, "found */ at "..i..","..j.."["..a..","..b..","..c.."]" )
+		dprint( 15, "found */ at "..i..","..j.."["..a..","..b..","..c.."]" )
 		local val = 0
 		if( b == "*" ) then
 			val = mpy( (a+0),(c+0) )
@@ -156,20 +157,20 @@ function evalMath( text )
 		elseif( b == "%" ) then
 			val = mod( (a+0),(c+0) )	
 		end
-		--print( "  val="..val )
+		dprint( 15, "  val="..val )
 		
 		-- bug-fix from github-user: jmg19
 		local aux = output:sub(i-1,i-1)
 		if( (aux~="+") and (aux~="-") and (aux~="*")
 				and (aux~="/") and (aux~="") ) then
 			if( val >= 0 )then
-				val = "+" .. val
+				--val = "+" .. val
 			end
 		end
-		--print( "  val2="..val )
+		dprint( 15, "  val2="..val )
 		
 		output = output:sub(1,i-1) .. val .. output:sub(j+1)
-		--dprint( 17, "output ["..output.."]" )
+		dprint( 17, "output ["..output.."]" )
 
 		i, j, a,b,c = string.find( output, "(%-*[0-9%.]+)([%*%/%%])(%-*[0-9%.]+)" )
 	end
@@ -177,7 +178,7 @@ function evalMath( text )
 	-- then, do add and sub
 	local i, j, a,b,c = string.find( output, "(%-*[0-9%.]+)([%+%-])(%-*[0-9%.]+)" )
 	while( i ~= nil ) do
-		--dprint( 15, "found +- at "..i..","..j.."["..a..","..b..","..c.."]" )
+		dprint( 15, "found +- at "..i..","..j.."["..a..","..b..","..c.."]" )
 		local val = 0
 		if( b == "+" ) then
 			val = add( (a+0),(c+0) )
@@ -185,7 +186,7 @@ function evalMath( text )
 			val = sub( (a+0),(c+0) )	
 		end
 		output = output:sub(1,i-1) .. val .. output:sub(j+1)
-		--dprint( 15, " new output ["..output.."]" )
+		dprint( 15, " new output ["..output.."]" )
 		flag = string.find( output, "[%+%-]" )
 		
 		i, j, a,b,c = string.find( output, "(%-*[0-9%.]+)([%+%-])(%-*[0-9%.]+)" )
@@ -195,7 +196,7 @@ function evalMath( text )
 	-- note: we've already handled logical negation, so "~" should only be "~="
 	i, j, a,b,c = string.find( output, "(%-*[0-9%.]+)([%~%>%<%=]+)(%-*[0-9%.]+)" )
 	while( i ~= nil ) do
-		--dprint( 15, "found log-op at "..i..","..j.."["..a..","..b..","..c.."]" )
+		dprint( 15, "found log-op at "..i..","..j.."["..a..","..b..","..c.."]" )
 		local val = 0
 		if( b == ">" ) then
 			val = l_gt( (a+0),(c+0) )
@@ -222,7 +223,7 @@ function evalMath( text )
 	-- then, logical and
 	i, j, a,b,c = string.find( output, "(%-*[0-9%.]+)(%&%&)(%-*[0-9%.]+)" )
 	while( i ~= nil ) do
-		--dprint( 15, "found +- at "..i..","..j.."["..a..","..b..","..c.."]" )
+		dprint( 15, "found +- at "..i..","..j.."["..a..","..b..","..c.."]" )
 		local val = 0
 		if( b == "&&" ) then
 			val = l_and( (a+0),(c+0) )
@@ -235,7 +236,7 @@ function evalMath( text )
 	-- last, logical or
 	i, j, a,b,c = string.find( output, "(%-*[0-9%.]+)(%|%|)(%-*[0-9%.]+)" )
 	while( i ~= nil ) do
-		--dprint( 15, "found +- at "..i..","..j.."["..a..","..b..","..c.."]" )
+		dprint( 15, "found +- at "..i..","..j.."["..a..","..b..","..c.."]" )
 		local val = 0
 		if( b == "||" ) then
 			val = l_or( (a+0),(c+0) )
@@ -254,15 +255,15 @@ function evalString( text, params )
 	-- local expr = text:rep(1)
 	-- remove spaces and copy the text
 	local expr = string.gsub( text, "%s+", "" )
-	--dprint( 15, "string-eval ["..expr.."]" )
+	dprint( 15, "string-eval ["..expr.."]" )
 
 	local i, j, a
 	
 	if( params ~= nil ) then
-		--dprint( 15, "found params table..." )
+		dprint( 15, "found params table..." )
 		i, j, a = string.find( expr, "(%a+)" )
 		while( i ~= nil ) do
-			--dprint( 15, "found var at "..i..","..j.."["..a.."]" )
+			dprint( 15, "found var at "..i..","..j.."["..a.."]" )
 			local val = 0
 			if( params[a] ~= nil ) then
 				val = params[a]
@@ -294,4 +295,10 @@ function evalString( text, params )
 	local output = evalMath( expr )
 	
 	return( output )
+end
+
+function dprint(PH, msg)
+	if(debugging)then
+		print(msg)
+	end
 end
