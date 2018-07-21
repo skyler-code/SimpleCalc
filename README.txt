@@ -32,7 +32,7 @@ For example:
 [SimpleCalc] 1650 + 2200 - honour = 3078
 
 Support for user defined variables was added in version 0.4. Variables persist across sessions, so you can save values for later use really easily.
-To save a value or calculation: /calc addVar x = 1024 or /calc addVar x = 32*2+64
+To save a value or calculation: /calc addvar x = 1024 or /calc addvar x = 32*2+64
 
 Comments, suggestions and bug reports are most welcome!
 
