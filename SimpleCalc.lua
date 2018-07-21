@@ -13,7 +13,7 @@ function SimpleCalc_OnLoad()
 	end
   
 	-- Let the user know we're here
-	DEFAULT_CHAT_FRAME:AddMessage("[+] SimpleCalc (v"..scversion..") initiated! Type: /calc for help.", 1, 1, 1);
+	SimpleCalc_Message("v"..scversion.." initiated! Type: /calc for help.");
 end
 
 -- Parse any user-passed parameters
