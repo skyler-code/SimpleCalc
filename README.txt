@@ -31,16 +31,12 @@ For example:
 /calc 1650 + 2200 - honour
 [SimpleCalc] 1650 + 2200 - honour = 3078
 
-SimpleCalc utilizes an expression evaluator written by computer scientist, John Pormann. The expression evaluator is a Lua interpretation of the shunting yard algorithm.
-This allows you to use advanced math expressions.
-
-For example: (Assume you have 100,000 gold)
-/calc 
+Support for user defined variables was added in version 0.4. Variables persist across sessions, so you can save values for later use really easily.
+To save a value or calculation: /calc addVar x = 1024 or /calc addVar x = 32 * 2 + 64
 
 Comments, suggestions and bug reports are most welcome!
-
 
 --[ License ]--
 
 SimpleCalc is provided under the MIT license. In essence, do what you will
-with this software, but please give credit to the original author, guildworks [https://mods.curse.com/members/guildworks].
+with this software, but please give credit to the original author, skylerh15
