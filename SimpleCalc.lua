@@ -1,7 +1,7 @@
 -- Initialize SimpleCalc
 scversion = GetAddOnMetadata("SimpleCalc", "Version");
 
-function SimpleCalc_OnLoad(self)
+function SimpleCalc_OnLoad()
 	-- Register our slash commands
 	SLASH_SIMPLECALC1="/simplecalc";
 	SLASH_SIMPLECALC2="/calc";
@@ -158,3 +158,7 @@ end
 function SimpleCalc_EvalString( s )
 	return assert( loadstring( "return " .. s ) )();
 end
+
+local SimpleCalc = CreateFrame("Frame", "SimpleCalc", UIParent);
+SimpleCalc:SetScript("OnEvent", function() SimpleCalc_OnLoad() end)
+SimpleCalc:RegisterEvent("PLAYER_LOGIN")

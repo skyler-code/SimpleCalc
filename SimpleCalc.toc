@@ -5,4 +5,3 @@
 ## Author: skylerh15
 ## Version: 1.1
 SimpleCalc.lua
-SimpleCalc.xml
