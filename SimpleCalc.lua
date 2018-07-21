@@ -18,9 +18,9 @@ end
 
 -- Parse any user-passed parameters
 function SimpleCalc_ParseParameters(paramStr)
-	
+
+	paramStr=string.lower(paramStr);
 	local i=0;
-	local paramStr=string.lower(paramStr);
 	local addVar=false;
 	local calcVariable="";
 	
@@ -96,7 +96,7 @@ function SimpleCalc_ParseParameters(paramStr)
 		[11]={copper=GetMoney()},
 		[12]={silver=GetMoney()/100},
 		[13]={gold=GetMoney()/10000},
-		[14]={maxxp = UnitXPMax('player')},
+		[14]={maxxp=UnitXPMax('player')},
 		[15]={xp=UnitXP('player')},
 		[16]={garrison=SimpleCalc_getCurrencyAmount(824)},
 		[17]={orderhall=SimpleCalc_getCurrencyAmount(1220)},
@@ -166,8 +166,4 @@ end
 function SimpleCalc_getCurrencyAmount(currencyID)
 	local _, currencyAmount = GetCurrencyInfo(currencyID);
 	return format("%s", currencyAmount);
-end
-
-function SimpleCalc_formatVariable(string, var, newVal)
-	return string:gsub("achieves",GetTotalAchievementPoints());
 end
