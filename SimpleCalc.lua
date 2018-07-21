@@ -52,16 +52,17 @@ function SimpleCalc_ParseParameters(paramStr)
 					return;
 				end
 			elseif(i==4)then -- Should be number
+				param = SimpleCalc_EvalString(param);
 				if (tonumber(param)==nil) then
 					SimpleCalc_Error("Invalid input: "..param);
 					SimpleCalc_Error("Variables can only be set to numbers!");
 					return;
 				else
-					if (tonumber(param) ~= 0) then
+					if (param ~= 0) then
 						calcVariables[calcVariable]={};
 						calcVariables[calcVariable][1]=calcVariable; 
 						calcVariables[calcVariable][2]=param;
-						SimpleCalc_Message('Set ' .. calcVariable .. ' to ' .. SimpleCalc_numberFormat(param));
+						SimpleCalc_Message('Set ' .. calcVariable .. ' to ' .. param);
 						return;
 					else -- Variables set to 0 are just wiped out
 						calcVariables[calcVariable]=nil;
@@ -122,7 +123,7 @@ function SimpleCalc_ParseParameters(paramStr)
 	end
 	
 	paramEval = paramEval:gsub("%s+", ""); -- Clean up whitespace
-	paramEval = assert(loadstring("return " .. paramEval))();
+	paramEval = SimpleCalc_EvalString(paramEval);
 	
 	SimpleCalc_Message(paramStr.." = "..paramEval);
 end
@@ -149,19 +150,11 @@ function SimpleCalc_Message(message)
 	DEFAULT_CHAT_FRAME:AddMessage("[SimpleCalc] " .. message, 0.5, 0.5, 1);
 end
 
--- Number formatting function, taken from http://lua-users.org/wiki/FormattingNumbers
-function SimpleCalc_numberFormat(amount)
-	local formatted=amount;
-	while true do
-		formatted, k=string.gsub(formatted, "^(-?%d+)(%d%d%d)", '%1,%2');
-		if (k==0) then
-			break;
-		end
-	end
-	return formatted;
-end
-
 function SimpleCalc_getCurrencyAmount(currencyID)
 	local _, currencyAmount = GetCurrencyInfo(currencyID);
 	return format("%s", currencyAmount);
+end
+
+function SimpleCalc_EvalString( s )
+	return assert( loadstring( "return " .. s ) )();
 end
