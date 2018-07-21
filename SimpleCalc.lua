@@ -1,7 +1,5 @@
--- Initialise SimpleCalc
+-- Initialize SimpleCalc
 scversion = GetAddOnMetadata("SimpleCalc", "Version");
-local GetEquippedArtifactInfo = _G.C_ArtifactUI.GetEquippedArtifactInfo
-local GetCostForPointAtRank = _G.C_ArtifactUI.GetCostForPointAtRank
 
 function SimpleCalc_OnLoad(self)
 	-- Register our slash commands
@@ -9,12 +7,12 @@ function SimpleCalc_OnLoad(self)
 	SLASH_SIMPLECALC2="/calc";
 	SlashCmdList["SIMPLECALC"]=SimpleCalc_ParseParameters;
 
-	-- Initialise our variables
+	-- Initialize our variables
 	if (not calcVariables) then
 		calcVariables={};
 	end
   
-	-- Let the user know that we're here
+	-- Let the user know we're here
 	DEFAULT_CHAT_FRAME:AddMessage("[+] SimpleCalc (v"..scversion..") initiated! Type: /calc for help.", 1, 1, 1);
 end
 
@@ -87,23 +85,18 @@ function SimpleCalc_ParseParameters(paramStr)
 
 	paramEval = paramStr;
 	paramEval = paramEval:gsub("achieves",GetTotalAchievementPoints());
-	paramEval = paramEval:gsub("honor",UnitHonor('player'));
-	paramEval = paramEval:gsub("honour",UnitHonor('player'));
 	paramEval = paramEval:gsub("maxhonor",UnitHonorMax('player'));
 	paramEval = paramEval:gsub("maxhonour",UnitHonorMax('player'));
+	paramEval = paramEval:gsub("honor",UnitHonor('player'));
+	paramEval = paramEval:gsub("honour",UnitHonor('player'));
 	paramEval = paramEval:gsub("health",UnitHealthMax('player'));
 	paramEval = paramEval:gsub("hp",UnitHealthMax('player'));
 	paramEval = paramEval:gsub("power",UnitPowerMax('player'));
 	paramEval = paramEval:gsub("mana",UnitPowerMax('player'));
+	paramEval = paramEval:gsub("rp",UnitPowerMax('player'));
 	paramEval = paramEval:gsub("copper",GetMoney());
 	paramEval = paramEval:gsub("silver",GetMoney() / 100);
 	paramEval = paramEval:gsub("gold",GetMoney() / 10000);
-	
-	local tXP, nRC = getAPInfo();
-	paramEval = paramEval:gsub("maxartifactpower",nRC);
-	paramEval = paramEval:gsub("artifactpower",tXP);
-	paramEval = paramEval:gsub("maxap",nRC);
-	paramEval = paramEval:gsub("ap",tXP);
 	
 	paramEval = paramEval:gsub("maxxp",UnitXPMax('player'));
 	paramEval = paramEval:gsub("xp",UnitXP('player'));
@@ -114,8 +107,6 @@ function SimpleCalc_ParseParameters(paramStr)
 		end
 	end
 	
-	
-	
 	if(string.match(paramEval, "[a-zA-Z]+")) then 
 		SimpleCalc_Error("Unrecognized variable!");
 		SimpleCalc_Error(paramEval);
@@ -123,26 +114,9 @@ function SimpleCalc_ParseParameters(paramStr)
 	end
 	
 	paramEval = paramEval:gsub("%s+", ""); -- Clean up whitespace
-	
-	local result = evalMath( paramEval );
+	local result = assert(loadstring("return " .. paramEval))();
 	
 	SimpleCalc_Message(paramStr.." = "..result);
-end
-
-function getAPInfo()
-	if(GetEquippedArtifactInfo() == nil) then -- Player doesn't have an artifact equipped, return 0
-		return 0, 0;
-	end
-	local itemID, altItemID, name, icon, totalXP, pointsSpent = GetEquippedArtifactInfo()
-	local pointsAvailable = 0
-	local nextRankCost = GetCostForPointAtRank(pointsSpent + pointsAvailable) or 0
-	while totalXP >= nextRankCost  do
-		totalXP = totalXP - nextRankCost
-		pointsAvailable = pointsAvailable + 1
-		nextRankCost = GetCostForPointAtRank(pointsSpent + pointsAvailable) or 0
-	end
-	
-	return totalXP, nextRankCost;
 end
 
 -- Inform the user of our their options
@@ -166,7 +140,6 @@ end
 function SimpleCalc_Message(message)
 	DEFAULT_CHAT_FRAME:AddMessage("[SimpleCalc] " .. message, 0.5, 0.5, 1);
 end
-
 
 -- Number formatting function, taken from http://lua-users.org/wiki/FormattingNumbers
 function numberFormat(amount)
