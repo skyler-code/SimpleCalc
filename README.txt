@@ -15,13 +15,16 @@ A selection of in-game values has been added to make life easier when doing cert
 * honour / honor - Honor points at current level
 * maxhonor / maxhonour - Honor required to reach next level
 * achieves - Your total achieve points
-* artifactpower (or ap) - Artifact Power at current level
-* artifactpowermax (or apmax) - Artifact Power required to level
 * health (or hp) - Your maximum Health points
 * mana (or power) - Your maximum Mana, Rage, Focus, Energy, or Runic Power
 * gold - Total gold (1g 50s would be displayed as 1.5 gold)
 * silver - Total silver (1g 50s would be displayed as 150 silver)
 * copper - Total copper (1g 50s would be displayed as 15,000 copper)
+* garrison - Garrison resources (WoD)
+* orderhall - Order Hall resources (Legion)
+* resources - War resources (BfA)
+* maxxp - XP required to level
+* xp - Current XP
 
 For example:
 

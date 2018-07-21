@@ -91,16 +91,14 @@ function SimpleCalc_ParseParameters(paramStr)
 		[6]={hp=UnitHealthMax(plr)},
 		[7]={power=UnitPowerMax(plr)},
 		[8]={mana=UnitPowerMax(plr)},
-		[9]={rp=UnitPowerMax(plr)},
-		[10]={rage=UnitPowerMax(plr)},
-		[11]={copper=GetMoney()},
-		[12]={silver=GetMoney()/100},
-		[13]={gold=GetMoney()/10000},
-		[14]={maxxp=UnitXPMax('player')},
-		[15]={xp=UnitXP('player')},
-		[16]={garrison=SimpleCalc_getCurrencyAmount(824)},
-		[17]={orderhall=SimpleCalc_getCurrencyAmount(1220)},
-		[18]={resources=SimpleCalc_getCurrencyAmount(1560)}
+		[9]={copper=GetMoney()},
+		[10]={silver=GetMoney()/100},
+		[11]={gold=GetMoney()/10000},
+		[12]={maxxp=UnitXPMax(plr)},
+		[13]={xp=UnitXP(plr)},
+		[14]={garrison=SimpleCalc_getCurrencyAmount(824)},
+		[15]={orderhall=SimpleCalc_getCurrencyAmount(1220)},
+		[16]={resources=SimpleCalc_getCurrencyAmount(1560)}
 	}
 
 	for i=0,#charVars,1 do
