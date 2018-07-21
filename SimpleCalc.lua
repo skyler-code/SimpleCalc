@@ -52,21 +52,21 @@ function SimpleCalc_ParseParameters(paramStr)
 					return;
 				end
 			elseif(i==4)then -- Should be number
-				param = SimpleCalc_EvalString(param);
-				if (tonumber(param)==nil) then
+				local evalParam = SimpleCalc_EvalString(param);
+				if (tonumber(evalParam)==nil) then
 					SimpleCalc_Error("Invalid input: "..param);
 					SimpleCalc_Error("Variables can only be set to numbers!");
 					return;
 				else
-					if (param ~= 0) then
+					if (evalParam ~= 0) then
 						calcVariables[calcVariable]={};
 						calcVariables[calcVariable][1]=calcVariable; 
-						calcVariables[calcVariable][2]=param;
-						SimpleCalc_Message('Set ' .. calcVariable .. ' to ' .. param);
+						calcVariables[calcVariable][2]=evalParam;
+						SimpleCalc_Message('Set ' .. calcVariable .. ' to ' .. evalParam);
 						return;
 					else -- Variables set to 0 are just wiped out
 						calcVariables[calcVariable]=nil;
-						SimpleCalc_Message('Unset variable : ' .. calcVariable);
+						SimpleCalc_Message('Reset variable : ' .. calcVariable);
 						return;
 					end
 					addVar = false; -- This means there were no errors, so we'll reset.
