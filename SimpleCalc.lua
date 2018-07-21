@@ -133,7 +133,7 @@ function SimpleCalc_Usage()
 	SimpleCalc_Message("Usage: /calc <value> <symbol> <value>");
 	SimpleCalc_Message("Usage: /calc addvar <variable> = <value>");
 	SimpleCalc_Message("Example: 1650 + 2200 - honor");
-	SimpleCalc_Message("value - A numeric or game value (honor, maxhonor, artifactpower, artifactpowermax, health, mana (or power), copper, silver, gold)");
+	SimpleCalc_Message("value - A numeric or game value (honor, maxhonor, health, mana (or power), copper, silver, gold)");
 	SimpleCalc_Message("symbol - A mathematical symbol (+, -, /, *)");
 	SimpleCalc_Message("variable - A name to store a value under for future use");
 end
