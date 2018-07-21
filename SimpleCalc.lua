@@ -19,12 +19,12 @@ end
 -- Parse any user-passed parameters
 function SimpleCalc_ParseParameters(paramStr)
 	
-	i=0;
-	paramStr=string.lower(paramStr);
-	addVar=false;
-	calcVariable="";
+	local i=0;
+	local paramStr=string.lower(paramStr);
+	local addVar=false;
+	local calcVariable="";
 	
-	if(paramStr == "") then
+	if(paramStr == "" or paramStr == "help") then
 		SimpleCalc_Usage();
 		return;
 	end
@@ -32,10 +32,6 @@ function SimpleCalc_ParseParameters(paramStr)
 	for param in string.gmatch(paramStr, "[^%s]+") do -- This loops through the user input (stuff after /calc). We're going to be checking for arguments such as "help" or "addvar" and acting accordingly.
 		i=i+1;
 		if(i==1) then
-			if(param=="help") then
-				SimpleCalc_Usage();
-				return;
-			end
 			if(param=="addvar")then
 				addVar=true;
 			end
@@ -65,7 +61,7 @@ function SimpleCalc_ParseParameters(paramStr)
 						calcVariables[calcVariable]={};
 						calcVariables[calcVariable][1]=calcVariable; 
 						calcVariables[calcVariable][2]=param;
-						SimpleCalc_Message('Set ' .. calcVariable .. ' to ' .. numberFormat(param));
+						SimpleCalc_Message('Set ' .. calcVariable .. ' to ' .. SimpleCalc_numberFormat(param));
 						return;
 					else -- Variables set to 0 are just wiped out
 						calcVariables[calcVariable]=nil;
@@ -83,24 +79,38 @@ function SimpleCalc_ParseParameters(paramStr)
 		return;
 	end
 
-	paramEval = paramStr;
-	paramEval = paramEval:gsub("achieves",GetTotalAchievementPoints());
-	paramEval = paramEval:gsub("maxhonor",UnitHonorMax('player'));
-	paramEval = paramEval:gsub("maxhonour",UnitHonorMax('player'));
-	paramEval = paramEval:gsub("honor",UnitHonor('player'));
-	paramEval = paramEval:gsub("honour",UnitHonor('player'));
-	paramEval = paramEval:gsub("health",UnitHealthMax('player'));
-	paramEval = paramEval:gsub("hp",UnitHealthMax('player'));
-	paramEval = paramEval:gsub("power",UnitPowerMax('player'));
-	paramEval = paramEval:gsub("mana",UnitPowerMax('player'));
-	paramEval = paramEval:gsub("rp",UnitPowerMax('player'));
-	paramEval = paramEval:gsub("copper",GetMoney());
-	paramEval = paramEval:gsub("silver",GetMoney() / 100);
-	paramEval = paramEval:gsub("gold",GetMoney() / 10000);
-	
-	paramEval = paramEval:gsub("maxxp",UnitXPMax('player'));
-	paramEval = paramEval:gsub("xp",UnitXP('player'));
-	
+	local paramEval = paramStr;
+	local plr = 'player';
+	local charVars = {
+		[0]={achieves=GetTotalAchievementPoints()},
+		[1]={maxhonor=UnitHonorMax(plr)},
+		[2]={maxhonour=UnitHonorMax(plr)},
+		[3]={honor=UnitHonor(plr)},
+		[4]={honour=UnitHonor(plr)},
+		[5]={health=UnitHealthMax(plr)},
+		[6]={hp=UnitHealthMax(plr)},
+		[7]={power=UnitPowerMax(plr)},
+		[8]={mana=UnitPowerMax(plr)},
+		[9]={rp=UnitPowerMax(plr)},
+		[10]={rage=UnitPowerMax(plr)},
+		[11]={copper=GetMoney()},
+		[12]={silver=GetMoney()/100},
+		[13]={gold=GetMoney()/10000},
+		[14]={maxxp = UnitXPMax('player')},
+		[15]={xp=UnitXP('player')},
+		[16]={garrison=SimpleCalc_getCurrencyAmount(824)},
+		[17]={orderhall=SimpleCalc_getCurrencyAmount(1220)},
+		[18]={resources=SimpleCalc_getCurrencyAmount(1560)}
+	}
+
+	for i=0,#charVars,1 do
+		for k, v in pairs(charVars[i]) do
+			if paramEval:find(k) then
+				paramEval = paramEval:gsub(k,v);
+			end
+		end
+	end
+
 	for i,calcVar in pairs(calcVariables) do
 		if(calcVar[1] and calcVar[2]) then
 			paramEval = paramEval:gsub(calcVar[1],calcVar[2]);
@@ -114,9 +124,9 @@ function SimpleCalc_ParseParameters(paramStr)
 	end
 	
 	paramEval = paramEval:gsub("%s+", ""); -- Clean up whitespace
-	local result = assert(loadstring("return " .. paramEval))();
+	paramEval = assert(loadstring("return " .. paramEval))();
 	
-	SimpleCalc_Message(paramStr.." = "..result);
+	SimpleCalc_Message(paramStr.." = "..paramEval);
 end
 
 -- Inform the user of our their options
@@ -142,13 +152,22 @@ function SimpleCalc_Message(message)
 end
 
 -- Number formatting function, taken from http://lua-users.org/wiki/FormattingNumbers
-function numberFormat(amount)
+function SimpleCalc_numberFormat(amount)
 	local formatted=amount;
-	while true do  
+	while true do
 		formatted, k=string.gsub(formatted, "^(-?%d+)(%d%d%d)", '%1,%2');
 		if (k==0) then
 			break;
 		end
 	end
 	return formatted;
+end
+
+function SimpleCalc_getCurrencyAmount(currencyID)
+	local _, currencyAmount = GetCurrencyInfo(currencyID);
+	return format("%s", currencyAmount);
+end
+
+function SimpleCalc_formatVariable(string, var, newVal)
+	return string:gsub("achieves",GetTotalAchievementPoints());
 end

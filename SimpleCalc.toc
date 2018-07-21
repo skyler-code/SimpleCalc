@@ -2,7 +2,7 @@
 ## Title: SimpleCalc
 ## Notes: A simple mathematical calculator. Type /calc for help!
 ## SavedVariables: calcVariables
-## Author: guildworks (Updated by deathdude)
+## Author: deathdude
 ## Version: 1.0
 SimpleCalc.lua
 SimpleCalc.xml
