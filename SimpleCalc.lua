@@ -34,6 +34,9 @@ function SimpleCalc_ParseParameters(paramStr)
         if(i==1) then
             if(param=="addvar")then
                 addVar=true;
+            elseif (param=="listvar")then
+                SimpleCalc_Message( SimpleCalc_ListVariables() );
+                return;
             end
         end
         if(addVar) then -- User entered addvar so let's loop through the rest of the params.
@@ -126,6 +129,20 @@ function SimpleCalc_ParseParameters(paramStr)
     paramEval = SimpleCalc_EvalString(paramEval);
     
     SimpleCalc_Message(paramStr.." = "..paramEval);
+end
+
+function SimpleCalc_ListVariables()
+    local listStr = "";
+    for i,calcVar in pairs(calcVariables) do
+        if(calcVar[1] and calcVar[2]) then
+            if (listStr == "") then
+                listStr = format("Saved Variables: %s = %s", calcVar[1], calcVar[2]);
+            else
+                listStr = format("%s, %s = %s", listStr, calcVar[1], calcVar[2]);
+            end
+        end
+    end
+    return listStr;
 end
 
 -- Inform the user of our their options
