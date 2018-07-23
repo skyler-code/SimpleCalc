@@ -62,7 +62,7 @@ function SimpleCalc_ParseParameters( paramStr )
             if ( param == "addvar" ) then
                 addVar = true;
             elseif ( param == "listvar" ) then
-                SimpleCalc_Message( SimpleCalc_ListUserVariables() );
+                SimpleCalc_ListVariables();
                 return;
             end
         end
@@ -130,18 +130,29 @@ function SimpleCalc_ParseParameters( paramStr )
     end
 end
 
-function SimpleCalc_ListUserVariables()
-    local listStr = "";
-    for i, calcVar in pairs( calcVariables ) do
-        if( calcVar[1] and calcVar[2] ) then
-            if ( listStr == "" ) then
-                listStr = format( "Saved Variables: %s = %s", calcVar[1], calcVar[2] );
+function SimpleCalc_ListVariables()
+    local userVars = "";
+    local systemVars = "";
+    for i = 0, #CHARVARS, 1 do
+        for k, v in pairs( CHARVARS[i] ) do
+            if ( systemVars == "" ) then
+                systemVars = format( "System variables: %s = %s", k, v );
             else
-                listStr = format( "%s, %s = %s", listStr, calcVar[1], calcVar[2] );
+                systemVars = format( "%s, %s = %s", systemVars, k, v );
             end
         end
     end
-    return listStr;
+    for i, calcVar in pairs( calcVariables ) do
+        if( calcVar[1] and calcVar[2] ) then
+            if ( userVars == "" ) then
+                userVars = format( "User variables: %s = %s", calcVar[1], calcVar[2] );
+            else
+                userVars = format( "%s, %s = %s", userVars, calcVar[1], calcVar[2] );
+            end
+        end
+    end
+    SimpleCalc_Message( systemVars );
+    SimpleCalc_Message( userVars );
 end
 
 function SimpleCalc_ApplyVariables( str )
@@ -170,7 +181,7 @@ function SimpleCalc_Usage()
     SimpleCalc_Message( "value - A numeric or game value (honor, maxhonor, health, mana (or power), copper, silver, gold)" );
     SimpleCalc_Message( "symbol - A mathematical symbol (+, -, /, *)" );
     SimpleCalc_Message( "variable - A name to store a value under for future use" );
-    SimpleCalc_Message( "Use /calc listvar to see your saved variables" );
+    SimpleCalc_Message( "Use /calc listvar to see SimpleCalc's and your saved variables" );
 end
 
 -- Output errors
