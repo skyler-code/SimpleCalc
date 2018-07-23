@@ -189,6 +189,7 @@ function SimpleCalc_Usage()
     SimpleCalc_Message( "symbol - A mathematical symbol (+, -, /, *)" );
     SimpleCalc_Message( "variable - A name to store a value under for future use" );
     SimpleCalc_Message( "Use /calc listvar to see SimpleCalc's and your saved variables" );
+    SimpleCalc_Message( "Use /calc clearvar to clear your saved variables" );
 end
 
 -- Output errors
