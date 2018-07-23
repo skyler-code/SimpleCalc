@@ -60,9 +60,9 @@ function SimpleCalc_ParseParameters( paramStr )
     for param in string.gmatch( paramStr, "[^%s]+" ) do -- This loops through the user input (stuff after /calc). We're going to be checking for arguments such as "help" or "addvar" and acting accordingly.
         i = i + 1;
         if ( i == 1 ) then
-            if( param == "addvar" )then
+            if ( param == "addvar" ) then
                 addVar = true;
-            elseif( param == "listvar" )then
+            elseif ( param == "listvar" ) then
                 SimpleCalc_Message( SimpleCalc_ListUserVariables() );
                 return;
             end
@@ -76,13 +76,13 @@ function SimpleCalc_ParseParameters( paramStr )
                 else
                     calcVariable = param;
                 end
-            elseif( i == 3 ) then -- Should be "="
+            elseif ( i == 3 ) then -- Should be "="
                 if not ( string.match( param, "=" ) ) then
                     SimpleCalc_Error( "Invalid input: " .. param );
                     SimpleCalc_Error( "You must use an equals sign!" );
                     return;
                 end
-            elseif( i == 4 )then -- Should be number
+            elseif ( i == 4 )then -- Should be number
                 local evalParam = SimpleCalc_EvalString( param );
                 if ( tonumber( evalParam ) == nil ) then
                     SimpleCalc_Error( "Invalid input: " .. param );
@@ -107,14 +107,14 @@ function SimpleCalc_ParseParameters( paramStr )
     end
     
     if ( addVar ) then -- User must have just typed /calc addvar so we'll give them a usage message.
-        SimpleCalc_Message("Usage: /calc addvar <variable> = <value>");
+        SimpleCalc_Message( "Usage: /calc addvar <variable> = <value>" );
         return;
     end
 
     local paramEval = SimpleCalc_ApplyReservedVariables( paramStr );
     paramEval = SimpleCalc_ApplyUserVariables( paramEval );
     
-    if( string.match( paramEval, "[a-zA-Z]+" ) ) then
+    if ( string.match( paramEval, "[a-zA-Z]+" ) ) then
         SimpleCalc_Error( "Unrecognized variable!" );
         SimpleCalc_Error( paramEval );
         return;
@@ -134,7 +134,7 @@ end
 
 function SimpleCalc_ListUserVariables()
     local listStr = "";
-    for i,calcVar in pairs( calcVariables ) do
+    for i, calcVar in pairs( calcVariables ) do
         if( calcVar[1] and calcVar[2] ) then
             if ( listStr == "" ) then
                 listStr = format( "Saved Variables: %s = %s", calcVar[1], calcVar[2] );
@@ -158,8 +158,8 @@ function SimpleCalc_ApplyReservedVariables(str)
 end
 
 function SimpleCalc_ApplyUserVariables( str )
-    for i,calcVar in pairs( calcVariables ) do
-        if( calcVar[1] and calcVar[2] ) then
+    for i, calcVar in pairs( calcVariables ) do
+        if ( calcVar[1] and calcVar[2] ) then
             str = str:gsub( calcVar[1], calcVar[2] );
         end
     end
