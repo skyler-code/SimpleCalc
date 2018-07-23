@@ -114,16 +114,22 @@ function SimpleCalc_ParseParameters( paramStr )
     local paramEval = SimpleCalc_ApplyReservedVariables( paramStr );
     paramEval = SimpleCalc_ApplyUserVariables( paramEval );
     
-    if( string.match( paramEval, "[a-zA-Z]+") ) then
+    if( string.match( paramEval, "[a-zA-Z]+" ) ) then
         SimpleCalc_Error( "Unrecognized variable!" );
         SimpleCalc_Error( paramEval );
         return;
     end
     
     paramEval = paramEval:gsub( "%s+", "" ); -- Clean up whitespace
-    paramEval = SimpleCalc_EvalString( paramEval );
-    
-    SimpleCalc_Message( paramStr .. " = " ..paramEval );
+    local evalStr = SimpleCalc_EvalString( paramEval );
+
+    if ( evalStr ) then
+        SimpleCalc_Message( paramStr .. " = " .. evalStr );
+    else
+        SimpleCalc_Error( "Could not evaluate expression! Maybe an unrecognized symbol?" );
+        SimpleCalc_Error( paramEval );
+    end
+
 end
 
 function SimpleCalc_ListUserVariables()
@@ -154,7 +160,7 @@ end
 function SimpleCalc_ApplyUserVariables( str )
     for i,calcVar in pairs( calcVariables ) do
         if( calcVar[1] and calcVar[2] ) then
-            str = str:gsub( calcVar[1],calcVar[2] );
+            str = str:gsub( calcVar[1], calcVar[2] );
         end
     end
     return str;
@@ -177,14 +183,18 @@ function SimpleCalc_Error( message )
     DEFAULT_CHAT_FRAME:AddMessage( "[SimpleCalc] " .. message, 0.8, 0.2, 0.2 );
 end
 
-
 -- Output messages
 function SimpleCalc_Message( message )
     DEFAULT_CHAT_FRAME:AddMessage( "[SimpleCalc] " .. message, 0.5, 0.5, 1 );
 end
 
 function SimpleCalc_EvalString( str )
-    return assert( loadstring( "return " .. str ) )();
+    local strFunc = loadstring( "return " .. str );
+    if ( pcall( strFunc ) ) then
+        return strFunc();
+    else
+        return false;
+    end
 end
 
 local SimpleCalc = CreateFrame( "Frame", "SimpleCalc", UIParent );
