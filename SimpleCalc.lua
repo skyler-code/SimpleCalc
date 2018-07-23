@@ -1,5 +1,33 @@
 -- Initialize SimpleCalc
 scversion = GetAddOnMetadata("SimpleCalc", "Version");
+local GARRISON_CURRENCY_ID = 824;
+local ORDERHALL_CURRENCY_ID = 1220;
+local RESOURCE_CURRENCY_ID = 1560;
+
+function SimpleCalc_getCurrencyAmount(currencyID)
+    local _, currencyAmount = GetCurrencyInfo(currencyID);
+    return format("%s", currencyAmount);
+end
+
+local CHARVARS = {
+    [0]={achieves=GetTotalAchievementPoints()},
+    [1]={maxhonor=UnitHonorMax('player')},
+    [2]={maxhonour=UnitHonorMax('player')},
+    [3]={honor=UnitHonor('player')},
+    [4]={honour=UnitHonor('player')},
+    [5]={health=UnitHealthMax('player')},
+    [6]={hp=UnitHealthMax('player')},
+    [7]={power=UnitPowerMax('player')},
+    [8]={mana=UnitPowerMax('player')},
+    [9]={copper=GetMoney()},
+    [10]={silver=GetMoney()/100},
+    [11]={gold=GetMoney()/10000},
+    [12]={maxxp=UnitXPMax('player')},
+    [13]={xp=UnitXP('player')},
+    [14]={garrison=SimpleCalc_getCurrencyAmount(GARRISON_CURRENCY_ID)},
+    [15]={orderhall=SimpleCalc_getCurrencyAmount(ORDERHALL_CURRENCY_ID)},
+    [16]={resources=SimpleCalc_getCurrencyAmount(RESOURCE_CURRENCY_ID)}
+}
 
 function SimpleCalc_OnLoad()
     -- Register our slash commands
@@ -35,7 +63,7 @@ function SimpleCalc_ParseParameters(paramStr)
             if(param=="addvar")then
                 addVar=true;
             elseif (param=="listvar")then
-                SimpleCalc_Message( SimpleCalc_ListVariables() );
+                SimpleCalc_Message( SimpleCalc_ListUserVariables() );
                 return;
             end
         end
@@ -83,41 +111,8 @@ function SimpleCalc_ParseParameters(paramStr)
         return;
     end
 
-    local paramEval = paramStr;
-    local plr = 'player';
-    local charVars = {
-        [0]={achieves=GetTotalAchievementPoints()},
-        [1]={maxhonor=UnitHonorMax(plr)},
-        [2]={maxhonour=UnitHonorMax(plr)},
-        [3]={honor=UnitHonor(plr)},
-        [4]={honour=UnitHonor(plr)},
-        [5]={health=UnitHealthMax(plr)},
-        [6]={hp=UnitHealthMax(plr)},
-        [7]={power=UnitPowerMax(plr)},
-        [8]={mana=UnitPowerMax(plr)},
-        [9]={copper=GetMoney()},
-        [10]={silver=GetMoney()/100},
-        [11]={gold=GetMoney()/10000},
-        [12]={maxxp=UnitXPMax(plr)},
-        [13]={xp=UnitXP(plr)},
-        [14]={garrison=SimpleCalc_getCurrencyAmount(824)},
-        [15]={orderhall=SimpleCalc_getCurrencyAmount(1220)},
-        [16]={resources=SimpleCalc_getCurrencyAmount(1560)}
-    }
-
-    for i=0,#charVars,1 do
-        for k, v in pairs(charVars[i]) do
-            if paramEval:find(k) then
-                paramEval = paramEval:gsub(k,v);
-            end
-        end
-    end
-
-    for i,calcVar in pairs(calcVariables) do
-        if(calcVar[1] and calcVar[2]) then
-            paramEval = paramEval:gsub(calcVar[1],calcVar[2]);
-        end
-    end
+    local paramEval = SimpleCalc_ApplyReservedVariables( paramStr );
+    paramEval = SimpleCalc_ApplyUserVariables( paramEval );
     
     if(string.match(paramEval, "[a-zA-Z]+")) then 
         SimpleCalc_Error("Unrecognized variable!");
@@ -131,7 +126,7 @@ function SimpleCalc_ParseParameters(paramStr)
     SimpleCalc_Message(paramStr.." = "..paramEval);
 end
 
-function SimpleCalc_ListVariables()
+function SimpleCalc_ListUserVariables()
     local listStr = "";
     for i,calcVar in pairs(calcVariables) do
         if(calcVar[1] and calcVar[2]) then
@@ -143,6 +138,28 @@ function SimpleCalc_ListVariables()
         end
     end
     return listStr;
+end
+
+function SimpleCalc_ApplyReservedVariables(str)
+    local returnStr = str;
+    for i=0,#CHARVARS,1 do
+        for k, v in pairs(CHARVARS[i]) do
+            if returnStr:find(k) then
+                returnStr = returnStr:gsub(k,v);
+            end
+        end
+    end
+    return returnStr;
+end
+
+function SimpleCalc_ApplyUserVariables(str)
+    local returnStr = str;
+    for i,calcVar in pairs(calcVariables) do
+        if(calcVar[1] and calcVar[2]) then
+            returnStr = returnStr:gsub(calcVar[1],calcVar[2]);
+        end
+    end
+    return returnStr;
 end
 
 -- Inform the user of our their options
@@ -166,11 +183,6 @@ end
 -- Output messages
 function SimpleCalc_Message(message)
     DEFAULT_CHAT_FRAME:AddMessage("[SimpleCalc] " .. message, 0.5, 0.5, 1);
-end
-
-function SimpleCalc_getCurrencyAmount(currencyID)
-    local _, currencyAmount = GetCurrencyInfo(currencyID);
-    return format("%s", currencyAmount);
 end
 
 function SimpleCalc_EvalString( s )
