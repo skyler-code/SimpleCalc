@@ -154,6 +154,7 @@ function SimpleCalc_Usage()
     SimpleCalc_Message("value - A numeric or game value (honor, maxhonor, health, mana (or power), copper, silver, gold)");
     SimpleCalc_Message("symbol - A mathematical symbol (+, -, /, *)");
     SimpleCalc_Message("variable - A name to store a value under for future use");
+    SimpleCalc_Message("Use /calc listvar to see your saved variables");
 end
 
 -- Output errors
