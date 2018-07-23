@@ -64,6 +64,10 @@ function SimpleCalc_ParseParameters( paramStr )
             elseif ( param == "listvar" ) then
                 SimpleCalc_ListVariables();
                 return;
+            elseif ( param == "clearvar" ) then
+                calcVariables = {};
+                SimpleCalc_Message( "User variables cleared!" );
+                return;
             end
         end
         if ( addVar ) then -- User entered addvar so let's loop through the rest of the params.
@@ -152,6 +156,9 @@ function SimpleCalc_ListVariables()
         end
     end
     SimpleCalc_Message( systemVars );
+    if ( userVars == "" ) then
+        userVars = "There are no user variables.";
+    end
     SimpleCalc_Message( userVars );
 end
 
