@@ -171,6 +171,7 @@ function SimpleCalc_ApplyVariables( str )
             end
         end
     end
+    -- Apply user variables
     for i, calcVar in pairs( calcVariables ) do
         if ( calcVar[1] and calcVar[2] ) then
             str = str:gsub( calcVar[1], calcVar[2] );
