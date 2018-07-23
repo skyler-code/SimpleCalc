@@ -83,10 +83,12 @@ function SimpleCalc_ParseParameters( paramStr )
                     return;
                 end
             elseif ( i == 4 )then -- Should be number
-                local evalParam = SimpleCalc_EvalString( param );
+                local newParamStr = SimpleCalc_ApplyReservedVariables( param );
+                newParamStr = SimpleCalc_ApplyUserVariables( newParamStr );
+                local evalParam = SimpleCalc_EvalString( newParamStr );
                 if ( tonumber( evalParam ) == nil ) then
                     SimpleCalc_Error( "Invalid input: " .. param );
-                    SimpleCalc_Error( "Variables can only be set to numbers!" );
+                    SimpleCalc_Error( "Variables can only be set to numbers or existing variables!" );
                     return;
                 else
                     if ( evalParam ~= 0 ) then
