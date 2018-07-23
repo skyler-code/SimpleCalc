@@ -46,7 +46,6 @@ end
 
 -- Parse any user-passed parameters
 function SimpleCalc_ParseParameters( paramStr )
-
     paramStr = string.lower( paramStr );
     local i = 0;
     local addVar = false;
@@ -83,8 +82,7 @@ function SimpleCalc_ParseParameters( paramStr )
                     return;
                 end
             elseif ( i == 4 )then -- Should be number
-                local newParamStr = SimpleCalc_ApplyReservedVariables( param );
-                newParamStr = SimpleCalc_ApplyUserVariables( newParamStr );
+                local newParamStr = SimpleCalc_ApplyVariables( param );
                 local evalParam = SimpleCalc_EvalString( newParamStr );
                 if ( tonumber( evalParam ) == nil ) then
                     SimpleCalc_Error( "Invalid input: " .. param );
@@ -113,8 +111,7 @@ function SimpleCalc_ParseParameters( paramStr )
         return;
     end
 
-    local paramEval = SimpleCalc_ApplyReservedVariables( paramStr );
-    paramEval = SimpleCalc_ApplyUserVariables( paramEval );
+    local paramEval = SimpleCalc_ApplyVariables( paramStr );
     
     if ( string.match( paramEval, "[a-zA-Z]+" ) ) then
         SimpleCalc_Error( "Unrecognized variable!" );
@@ -131,7 +128,6 @@ function SimpleCalc_ParseParameters( paramStr )
         SimpleCalc_Error( "Could not evaluate expression! Maybe an unrecognized symbol?" );
         SimpleCalc_Error( paramEval );
     end
-
 end
 
 function SimpleCalc_ListUserVariables()
@@ -148,7 +144,8 @@ function SimpleCalc_ListUserVariables()
     return listStr;
 end
 
-function SimpleCalc_ApplyReservedVariables(str)
+function SimpleCalc_ApplyVariables( str )
+    -- Apply reserved variables
     for i = 0, #CHARVARS, 1 do
         for k, v in pairs( CHARVARS[i] ) do
             if str:find( k ) then
@@ -156,10 +153,6 @@ function SimpleCalc_ApplyReservedVariables(str)
             end
         end
     end
-    return str;
-end
-
-function SimpleCalc_ApplyUserVariables( str )
     for i, calcVar in pairs( calcVariables ) do
         if ( calcVar[1] and calcVar[2] ) then
             str = str:gsub( calcVar[1], calcVar[2] );
