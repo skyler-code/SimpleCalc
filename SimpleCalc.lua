@@ -21,7 +21,7 @@ end
 
 -- Parse any user-passed parameters
 function SimpleCalc_ParseParameters( paramStr )
-    paramStr = string.lower( paramStr );
+    paramStr = paramStr:lower();
     local i = 0;
     local addVar, calcVariable;
     local charVars = {
@@ -49,7 +49,7 @@ function SimpleCalc_ParseParameters( paramStr )
         return;
     end
     
-    for param in string.gmatch( paramStr, '[^%s]+' ) do -- This loops through the user input (stuff after /calc). We're going to be checking for arguments such as 'help' or 'addvar' and acting accordingly.
+    for param in paramStr:gmatch( '[^%s]+' ) do -- This loops through the user input (stuff after /calc). We're going to be checking for arguments such as 'help' or 'addvar' and acting accordingly.
         i = i + 1;
         if ( i == 1 ) then
             if ( param == 'addvar' ) then
@@ -65,7 +65,7 @@ function SimpleCalc_ParseParameters( paramStr )
         end
         if ( addVar ) then -- User entered addvar so let's loop through the rest of the params.
             if ( i == 2 ) then -- Should be variable name
-                if not ( string.match( param, '[a-zA-Z]+' ) ) then
+                if not ( param:match( '[a-zA-Z]+' ) ) then
                     SimpleCalc_Error( 'Invalid input: ' .. param );
                     SimpleCalc_Error( 'New variable must contain 1 letter!' );
                     return;
@@ -73,7 +73,7 @@ function SimpleCalc_ParseParameters( paramStr )
                     calcVariable = param;
                 end
             elseif ( i == 3 ) then -- Should be '='
-                if not ( string.match( param, '=' ) ) then
+                if not ( param:match( '=' ) ) then
                     SimpleCalc_Error( 'Invalid input: ' .. param );
                     SimpleCalc_Error( 'You must use an equals sign!' );
                     return;
@@ -108,7 +108,7 @@ function SimpleCalc_ParseParameters( paramStr )
 
     local paramEval = SimpleCalc_ApplyVariables( paramStr, charVars );
     
-    if ( string.match( paramEval, '[a-zA-Z]+' ) ) then
+    if ( paramEval:match( '[a-zA-Z]+' ) ) then
         SimpleCalc_Error( 'Unrecognized variable!' );
         SimpleCalc_Error( paramEval );
         return;
@@ -190,7 +190,7 @@ end
 
 -- Output messages
 function SimpleCalc_Message( message )
-    DEFAULT_CHAT_FRAME:AddMessage( '[SimpleCalc] ' .. message, 0.5, 0.5, 1 );
+    DEFAULT_CHAT_FRAME:AddMessage( '[SimpleCalc]: ' .. message, 0.5, 0.5, 1 );
 end
 
 function SimpleCalc_EvalString( str )
