@@ -4,11 +4,6 @@ local GARRISON_CURRENCY_ID = 824;
 local ORDERHALL_CURRENCY_ID = 1220;
 local RESOURCE_CURRENCY_ID = 1560;
 
-function SimpleCalc_getCurrencyAmount( currencyID )
-    local _, currencyAmount = GetCurrencyInfo( currencyID );
-    return format( '%s', currencyAmount );
-end
-
 function SimpleCalc_OnLoad()
     -- Register our slash commands
     SLASH_SIMPLECALC1 = '/simplecalc';
@@ -28,8 +23,8 @@ end
 function SimpleCalc_ParseParameters( paramStr )
     paramStr = string.lower( paramStr );
     local i = 0;
-    local addVar = false;
-    local calcVariable = '';
+    local addVar;
+    local calcVariable;
     local charVars = {
         [0]  = { achieves   = GetTotalAchievementPoints() },
         [1]  = { maxhonor   = UnitHonorMax( 'player' ) },
@@ -134,11 +129,11 @@ function SimpleCalc_ParseParameters( paramStr )
 end
 
 function SimpleCalc_ListVariables( charVars )
-    local userVars = '';
-    local systemVars = '';
+    local systemVars;
+    local userVars;
     for i = 0, #charVars, 1 do
         for k, v in pairs( charVars[i] ) do
-            if ( systemVars == '' ) then
+            if ( i == 0 ) then
                 systemVars = format( 'System variables: %s = %s', k, v );
             else
                 systemVars = format( '%s, %s = %s', systemVars, k, v );
@@ -147,7 +142,7 @@ function SimpleCalc_ListVariables( charVars )
     end
     for i, calcVar in pairs( calcVariables ) do
         if( calcVar[1] and calcVar[2] ) then
-            if ( userVars == '' ) then
+            if ( not userVars ) then
                 userVars = format( 'User variables: %s = %s', calcVar[1], calcVar[2] );
             else
                 userVars = format( '%s, %s = %s', userVars, calcVar[1], calcVar[2] );
@@ -155,7 +150,7 @@ function SimpleCalc_ListVariables( charVars )
         end
     end
     SimpleCalc_Message( systemVars );
-    if ( userVars == '' ) then
+    if ( not userVars ) then
         userVars = 'There are no user variables.';
     end
     SimpleCalc_Message( userVars );
@@ -177,6 +172,11 @@ function SimpleCalc_ApplyVariables( str, charVars )
         end
     end
     return str;
+end
+
+function SimpleCalc_getCurrencyAmount( currencyID )
+    local _, currencyAmount = GetCurrencyInfo( currencyID );
+    return format( '%s', currencyAmount );
 end
 
 function SimpleCalc_Usage()
