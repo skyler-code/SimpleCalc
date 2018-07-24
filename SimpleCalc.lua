@@ -11,8 +11,11 @@ function SimpleCalc_OnLoad()
     SlashCmdList['SIMPLECALC'] = SimpleCalc_ParseParameters;
 
     -- Initialize our variables
-    if ( not SimpleCalc_Variables ) then
-        SimpleCalc_Variables = {};
+    if ( not SimpleCalc_CharVariables ) then
+        SimpleCalc_CharVariables = {};
+    end
+    if ( not calcVariables ) then
+        calcVariables = {};
     end
   
     -- Let the user know we're here
@@ -23,7 +26,7 @@ end
 function SimpleCalc_ParseParameters( paramStr )
     paramStr = paramStr:lower();
     local i = 0;
-    local addVar, calcVariable;
+    local addVar, calcVariable, varIsGlobal, clearVar, clearGlobal, clearChar;
     local charVars = {
         [0]  = { achieves   = GetTotalAchievementPoints() },
         [1]  = { maxhonor   = UnitHonorMax( 'player' ) },
@@ -50,21 +53,26 @@ function SimpleCalc_ParseParameters( paramStr )
     end
     
     for param in paramStr:gmatch( '[^%s]+' ) do -- This loops through the user input (stuff after /calc). We're going to be checking for arguments such as 'help' or 'addvar' and acting accordingly.
-        i = i + 1;
-        if ( i == 1 ) then
+        if ( i == 0 ) then
             if ( param == 'addvar' ) then
                 addVar = true;
             elseif ( param == 'listvar' ) then
                 SimpleCalc_ListVariables( charVars );
                 return;
             elseif ( param == 'clearvar' ) then
-                SimpleCalc_Variables = {};
-                SimpleCalc_Message( 'User variables cleared!' );
-                return;
+                clearVar = true;
             end
         end
         if ( addVar ) then -- User entered addvar so let's loop through the rest of the params.
-            if ( i == 2 ) then -- Should be variable name
+            if ( i == 1 ) then
+                if ( param == 'global' or param == 'g' ) then
+                    varIsGlobal = true;
+                elseif ( param ~= 'char' and param ~= 'c' ) then
+                    SimpleCalc_Error( 'Invalid input: ' .. param );
+                    SimpleCalc_AddVarUsage();
+                    return;
+                end
+            elseif ( i == 2 ) then -- Should be variable name
                 if not ( param:match( '[a-zA-Z]+' ) ) then
                     SimpleCalc_Error( 'Invalid input: ' .. param );
                     SimpleCalc_Error( 'New variable must contain 1 letter!' );
@@ -73,7 +81,7 @@ function SimpleCalc_ParseParameters( paramStr )
                     calcVariable = param;
                 end
             elseif ( i == 3 ) then -- Should be '='
-                if not ( param:match( '=' ) ) then
+                if ( param ~= '=' ) then
                     SimpleCalc_Error( 'Invalid input: ' .. param );
                     SimpleCalc_Error( 'You must use an equals sign!' );
                     return;
@@ -81,28 +89,52 @@ function SimpleCalc_ParseParameters( paramStr )
             elseif ( i == 4 )then -- Should be number
                 local newParamStr = SimpleCalc_ApplyVariables( param, charVars );
                 local evalParam = SimpleCalc_EvalString( newParamStr );
-                if ( tonumber( evalParam ) == nil ) then
+                if ( not tonumber( evalParam ) ) then
                     SimpleCalc_Error( 'Invalid input: ' .. param );
                     SimpleCalc_Error( 'Variables can only be set to numbers or existing variables!' );
-                    return;
                 else
-                    if ( evalParam ~= 0 ) then
-                        SimpleCalc_Variables[calcVariable] = evalParam;
-                        SimpleCalc_Message( 'Set ' .. calcVariable .. ' to ' .. evalParam );
-                        return;
-                    else -- Variables set to 0 are just wiped out
-                        SimpleCalc_Variables[calcVariable] = nil;
-                        SimpleCalc_Message( 'Reset variable: ' .. calcVariable );
-                        return;
+                    local saveLocation, saveLocationStr = SimpleCalc_CharVariables, 'Character';
+                    if ( varIsGlobal ) then
+                        saveLocation, saveLocationStr = calcVariables, 'Global';
                     end
-                    addVar = false; -- This means there were no errors, so we'll reset.
+                    if ( evalParam ~= 0 ) then
+                        saveLocation[calcVariable] = evalParam;
+                        SimpleCalc_Message( '[' .. saveLocationStr .. '] ' .. 'set ' .. calcVariable .. ' to ' .. evalParam );
+                    else -- Variables set to 0 are just wiped out
+                        saveLocation[calcVariable] = nil;
+                        SimpleCalc_Message( '[' .. saveLocationStr .. '] ' .. 'Reset variable: ' .. calcVariable );
+                    end
+                end
+                return;
+            end
+        elseif ( clearVar ) then
+            if ( i == 1 ) then
+                if ( param == 'global' or param == 'g' ) then
+                    clearGlobal = true;
+                elseif ( param == 'char' or param == 'c' ) then
+                    clearChar = true;
                 end
             end
         end
+        i = i + 1;
     end
     
     if ( addVar ) then -- User must have just typed /calc addvar so we'll give them a usage message.
-        SimpleCalc_Message( 'Usage: /calc addvar <variable> = <value>' );
+        SimpleCalc_AddVarUsage();
+        return;
+    end
+
+    if ( clearVar ) then
+        if ( clearGlobal ) then
+            calcVariables = {};
+            SimpleCalc_Message( 'Global user variables cleared!' );
+        elseif ( clearChar ) then
+            SimpleCalc_CharVariables = {};
+            SimpleCalc_Message( 'Character user variables cleared!' );
+        else
+            calcVariables, SimpleCalc_CharVariables = {}, {};
+            SimpleCalc_Message( 'All user variables cleared!' );
+        end
         return;
     end
 
@@ -126,7 +158,7 @@ function SimpleCalc_ParseParameters( paramStr )
 end
 
 function SimpleCalc_ListVariables( charVars )
-    local systemVars, userVars;
+    local systemVars, globalVars, userVars;
     for i = 0, #charVars, 1 do
         for k, v in pairs( charVars[i] ) do
             if ( i == 0 ) then
@@ -136,17 +168,28 @@ function SimpleCalc_ListVariables( charVars )
             end
         end
     end
-    for k, v in pairs( SimpleCalc_Variables ) do
+    for k, v in pairs( calcVariables ) do
+        if ( not globalVars ) then
+            globalVars = format( 'Global user variables: %s = %s', k, v );
+        else
+            globalVars = format( '%s, %s = %s', userVars, k, v );
+        end
+    end
+    for k, v in pairs( SimpleCalc_CharVariables ) do
         if ( not userVars ) then
-            userVars = format( 'User variables: %s = %s', k, v );
+            userVars = format( 'Character user variables: %s = %s', k, v );
         else
             userVars = format( '%s, %s = %s', userVars, k, v );
         end
     end
-    SimpleCalc_Message( systemVars );
-    if ( not userVars ) then
-        userVars = 'There are no user variables.';
+    if ( not globalVars ) then
+        globalVars = 'There are no global user variables.';
     end
+    if ( not userVars ) then
+        userVars = 'There are no character user variables.';
+    end
+    SimpleCalc_Message( systemVars );
+    SimpleCalc_Message( globalVars );
     SimpleCalc_Message( userVars );
 end
 
@@ -159,8 +202,12 @@ function SimpleCalc_ApplyVariables( str, charVars )
             end
         end
     end
-    -- Apply user variables
-    for k, v in pairs( SimpleCalc_Variables ) do
+    -- Apply global user variables
+    for k, v in pairs( calcVariables ) do
+        str = str:gsub( k, v );
+    end
+    -- Apply character user variables
+    for k, v in pairs( SimpleCalc_CharVariables ) do
         str = str:gsub( k, v );
     end
     return str;
@@ -180,7 +227,13 @@ function SimpleCalc_Usage()
     SimpleCalc_Message( 'symbol - A mathematical symbol (+, -, /, *)' );
     SimpleCalc_Message( 'variable - A name to store a value under for future use' );
     SimpleCalc_Message( 'Use /calc listvar to see SimpleCalc\'s and your saved variables' );
-    SimpleCalc_Message( 'Use /calc clearvar to clear your saved variables' );
+    SimpleCalc_Message( 'Use /calc clearvar <global(g)|char(c)|all> to clear your saved variables. Defaults to all.' );
+end
+
+function SimpleCalc_AddVarUsage()
+    SimpleCalc_Message( 'Usage: /calc addvar <global(g)|char(c)> <variable> = <value|variable|expression>' );
+    SimpleCalc_Message( 'Example: /calc addvar g mainGold = gold' );
+    SimpleCalc_Message( 'Note: Global variables are prioritized over the character\'s when evaluating expressions.' );
 end
 
 -- Output errors
