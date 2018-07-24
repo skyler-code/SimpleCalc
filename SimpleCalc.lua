@@ -180,7 +180,6 @@ function SimpleCalc_ApplyVariables( str )
     return str;
 end
 
--- Inform the user of our their options
 function SimpleCalc_Usage()
     SimpleCalc_Message( "SimpleCalc (v" .. scversion .. ") - Simple mathematical calculator" );
     SimpleCalc_Message( "Usage: /calc <value> <symbol> <value>" );
