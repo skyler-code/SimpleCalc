@@ -1,19 +1,19 @@
 -- Initialize SimpleCalc
-scversion = GetAddOnMetadata( "SimpleCalc", "Version" );
+scversion = GetAddOnMetadata( 'SimpleCalc', 'Version' );
 local GARRISON_CURRENCY_ID = 824;
 local ORDERHALL_CURRENCY_ID = 1220;
 local RESOURCE_CURRENCY_ID = 1560;
 
 function SimpleCalc_getCurrencyAmount( currencyID )
     local _, currencyAmount = GetCurrencyInfo( currencyID );
-    return format( "%s", currencyAmount );
+    return format( '%s', currencyAmount );
 end
 
 function SimpleCalc_OnLoad()
     -- Register our slash commands
-    SLASH_SIMPLECALC1 = "/simplecalc";
-    SLASH_SIMPLECALC2 = "/calc";
-    SlashCmdList["SIMPLECALC"] = SimpleCalc_ParseParameters;
+    SLASH_SIMPLECALC1 = '/simplecalc';
+    SLASH_SIMPLECALC2 = '/calc';
+    SlashCmdList['SIMPLECALC'] = SimpleCalc_ParseParameters;
 
     -- Initialize our variables
     if ( not calcVariables ) then
@@ -21,7 +21,7 @@ function SimpleCalc_OnLoad()
     end
   
     -- Let the user know we're here
-    SimpleCalc_Message( "v" .. scversion .. " initiated! Type: /calc for help." );
+    SimpleCalc_Message( 'v' .. scversion .. ' initiated! Type: /calc for help.' );
 end
 
 -- Parse any user-passed parameters
@@ -29,67 +29,67 @@ function SimpleCalc_ParseParameters( paramStr )
     paramStr = string.lower( paramStr );
     local i = 0;
     local addVar = false;
-    local calcVariable = "";
+    local calcVariable = '';
     local charVars = {
-        [0]  = { achieves = GetTotalAchievementPoints() },
-        [1]  = { maxhonor = UnitHonorMax( 'player' ) },
-        [2]  = { maxhonour = UnitHonorMax( 'player' ) },
-        [3]  = { honor = UnitHonor( 'player' ) },
-        [4]  = { honour = UnitHonor( 'player' ) },
-        [5]  = { health = UnitHealthMax( 'player' ) },
-        [6]  = { hp = UnitHealthMax( 'player' ) },
-        [7]  = { power = UnitPowerMax( 'player' ) },
-        [8]  = { mana = UnitPowerMax( 'player' ) },
-        [9]  = { copper = GetMoney() },
-        [10] = { silver = GetMoney() / 100 },
-        [11] = { gold = GetMoney() / 10000 },
-        [12] = { maxxp = UnitXPMax( 'player' ) },
-        [13] = { xp = UnitXP( 'player' ) },
-        [14] = { garrison = SimpleCalc_getCurrencyAmount( GARRISON_CURRENCY_ID ) },
-        [15] = { orderhall = SimpleCalc_getCurrencyAmount( ORDERHALL_CURRENCY_ID ) },
-        [16] = { resources = SimpleCalc_getCurrencyAmount( RESOURCE_CURRENCY_ID ) }
+        [0]  = { achieves   = GetTotalAchievementPoints() },
+        [1]  = { maxhonor   = UnitHonorMax( 'player' ) },
+        [2]  = { maxhonour  = UnitHonorMax( 'player' ) },
+        [3]  = { honor      = UnitHonor( 'player' ) },
+        [4]  = { honour     = UnitHonor( 'player' ) },
+        [5]  = { health     = UnitHealthMax( 'player' ) },
+        [6]  = { hp         = UnitHealthMax( 'player' ) },
+        [7]  = { power      = UnitPowerMax( 'player' ) },
+        [8]  = { mana       = UnitPowerMax( 'player' ) },
+        [9]  = { copper     = GetMoney() },
+        [10] = { silver     = GetMoney() / 100 },
+        [11] = { gold       = GetMoney() / 10000 },
+        [12] = { maxxp      = UnitXPMax( 'player' ) },
+        [13] = { xp         = UnitXP( 'player' ) },
+        [14] = { garrison   = SimpleCalc_getCurrencyAmount( GARRISON_CURRENCY_ID ) },
+        [15] = { orderhall  = SimpleCalc_getCurrencyAmount( ORDERHALL_CURRENCY_ID ) },
+        [16] = { resources  = SimpleCalc_getCurrencyAmount( RESOURCE_CURRENCY_ID ) }
     }
     
-    if ( paramStr == "" or paramStr == "help" ) then
+    if ( paramStr == '' or paramStr == 'help' ) then
         SimpleCalc_Usage();
         return;
     end
     
-    for param in string.gmatch( paramStr, "[^%s]+" ) do -- This loops through the user input (stuff after /calc). We're going to be checking for arguments such as "help" or "addvar" and acting accordingly.
+    for param in string.gmatch( paramStr, '[^%s]+' ) do -- This loops through the user input (stuff after /calc). We're going to be checking for arguments such as 'help' or 'addvar' and acting accordingly.
         i = i + 1;
         if ( i == 1 ) then
-            if ( param == "addvar" ) then
+            if ( param == 'addvar' ) then
                 addVar = true;
-            elseif ( param == "listvar" ) then
+            elseif ( param == 'listvar' ) then
                 SimpleCalc_ListVariables( charVars );
                 return;
-            elseif ( param == "clearvar" ) then
+            elseif ( param == 'clearvar' ) then
                 calcVariables = {};
-                SimpleCalc_Message( "User variables cleared!" );
+                SimpleCalc_Message( 'User variables cleared!' );
                 return;
             end
         end
         if ( addVar ) then -- User entered addvar so let's loop through the rest of the params.
             if ( i == 2 ) then -- Should be variable name
-                if not ( string.match( param, "[a-zA-Z]+" ) ) then
-                    SimpleCalc_Error( "Invalid input: " .. param );
-                    SimpleCalc_Error( "New variable must contain 1 letter!" );
+                if not ( string.match( param, '[a-zA-Z]+' ) ) then
+                    SimpleCalc_Error( 'Invalid input: ' .. param );
+                    SimpleCalc_Error( 'New variable must contain 1 letter!' );
                     return;
                 else
                     calcVariable = param;
                 end
-            elseif ( i == 3 ) then -- Should be "="
-                if not ( string.match( param, "=" ) ) then
-                    SimpleCalc_Error( "Invalid input: " .. param );
-                    SimpleCalc_Error( "You must use an equals sign!" );
+            elseif ( i == 3 ) then -- Should be '='
+                if not ( string.match( param, '=' ) ) then
+                    SimpleCalc_Error( 'Invalid input: ' .. param );
+                    SimpleCalc_Error( 'You must use an equals sign!' );
                     return;
                 end
             elseif ( i == 4 )then -- Should be number
                 local newParamStr = SimpleCalc_ApplyVariables( param, charVars );
                 local evalParam = SimpleCalc_EvalString( newParamStr );
                 if ( tonumber( evalParam ) == nil ) then
-                    SimpleCalc_Error( "Invalid input: " .. param );
-                    SimpleCalc_Error( "Variables can only be set to numbers or existing variables!" );
+                    SimpleCalc_Error( 'Invalid input: ' .. param );
+                    SimpleCalc_Error( 'Variables can only be set to numbers or existing variables!' );
                     return;
                 else
                     if ( evalParam ~= 0 ) then
@@ -110,53 +110,53 @@ function SimpleCalc_ParseParameters( paramStr )
     end
     
     if ( addVar ) then -- User must have just typed /calc addvar so we'll give them a usage message.
-        SimpleCalc_Message( "Usage: /calc addvar <variable> = <value>" );
+        SimpleCalc_Message( 'Usage: /calc addvar <variable> = <value>' );
         return;
     end
 
     local paramEval = SimpleCalc_ApplyVariables( paramStr, charVars );
     
-    if ( string.match( paramEval, "[a-zA-Z]+" ) ) then
-        SimpleCalc_Error( "Unrecognized variable!" );
+    if ( string.match( paramEval, '[a-zA-Z]+' ) ) then
+        SimpleCalc_Error( 'Unrecognized variable!' );
         SimpleCalc_Error( paramEval );
         return;
     end
     
-    paramEval = paramEval:gsub( "%s+", "" ); -- Clean up whitespace
+    paramEval = paramEval:gsub( '%s+', '' ); -- Clean up whitespace
     local evalStr = SimpleCalc_EvalString( paramEval );
 
     if ( evalStr ) then
-        SimpleCalc_Message( paramStr .. " = " .. evalStr );
+        SimpleCalc_Message( paramStr .. ' = ' .. evalStr );
     else
-        SimpleCalc_Error( "Could not evaluate expression! Maybe an unrecognized symbol?" );
+        SimpleCalc_Error( 'Could not evaluate expression! Maybe an unrecognized symbol?' );
         SimpleCalc_Error( paramEval );
     end
 end
 
 function SimpleCalc_ListVariables( charVars )
-    local userVars = "";
-    local systemVars = "";
+    local userVars = '';
+    local systemVars = '';
     for i = 0, #charVars, 1 do
         for k, v in pairs( charVars[i] ) do
-            if ( systemVars == "" ) then
-                systemVars = format( "System variables: %s = %s", k, v );
+            if ( systemVars == '' ) then
+                systemVars = format( 'System variables: %s = %s', k, v );
             else
-                systemVars = format( "%s, %s = %s", systemVars, k, v );
+                systemVars = format( '%s, %s = %s', systemVars, k, v );
             end
         end
     end
     for i, calcVar in pairs( calcVariables ) do
         if( calcVar[1] and calcVar[2] ) then
-            if ( userVars == "" ) then
-                userVars = format( "User variables: %s = %s", calcVar[1], calcVar[2] );
+            if ( userVars == '' ) then
+                userVars = format( 'User variables: %s = %s', calcVar[1], calcVar[2] );
             else
-                userVars = format( "%s, %s = %s", userVars, calcVar[1], calcVar[2] );
+                userVars = format( '%s, %s = %s', userVars, calcVar[1], calcVar[2] );
             end
         end
     end
     SimpleCalc_Message( systemVars );
-    if ( userVars == "" ) then
-        userVars = "There are no user variables.";
+    if ( userVars == '' ) then
+        userVars = 'There are no user variables.';
     end
     SimpleCalc_Message( userVars );
 end
@@ -180,29 +180,29 @@ function SimpleCalc_ApplyVariables( str, charVars )
 end
 
 function SimpleCalc_Usage()
-    SimpleCalc_Message( "SimpleCalc (v" .. scversion .. ") - Simple mathematical calculator" );
-    SimpleCalc_Message( "Usage: /calc <value> <symbol> <value>" );
-    SimpleCalc_Message( "Usage: /calc addvar <variable> = <value>" );
-    SimpleCalc_Message( "Example: 1650 + 2200 - honor" );
-    SimpleCalc_Message( "value - A numeric or game value (honor, maxhonor, health, mana (or power), copper, silver, gold)" );
-    SimpleCalc_Message( "symbol - A mathematical symbol (+, -, /, *)" );
-    SimpleCalc_Message( "variable - A name to store a value under for future use" );
-    SimpleCalc_Message( "Use /calc listvar to see SimpleCalc's and your saved variables" );
-    SimpleCalc_Message( "Use /calc clearvar to clear your saved variables" );
+    SimpleCalc_Message( 'SimpleCalc (v' .. scversion .. ') - Simple mathematical calculator' );
+    SimpleCalc_Message( 'Usage: /calc <value> <symbol> <value>' );
+    SimpleCalc_Message( 'Usage: /calc addvar <variable> = <value>' );
+    SimpleCalc_Message( 'Example: 1650 + 2200 - honor' );
+    SimpleCalc_Message( 'value - A numeric or game value (honor, maxhonor, health, mana (or power), copper, silver, gold)' );
+    SimpleCalc_Message( 'symbol - A mathematical symbol (+, -, /, *)' );
+    SimpleCalc_Message( 'variable - A name to store a value under for future use' );
+    SimpleCalc_Message( 'Use /calc listvar to see SimpleCalc\'s and your saved variables' );
+    SimpleCalc_Message( 'Use /calc clearvar to clear your saved variables' );
 end
 
 -- Output errors
 function SimpleCalc_Error( message )
-    DEFAULT_CHAT_FRAME:AddMessage( "[SimpleCalc] " .. message, 0.8, 0.2, 0.2 );
+    DEFAULT_CHAT_FRAME:AddMessage( '[SimpleCalc] ' .. message, 0.8, 0.2, 0.2 );
 end
 
 -- Output messages
 function SimpleCalc_Message( message )
-    DEFAULT_CHAT_FRAME:AddMessage( "[SimpleCalc] " .. message, 0.5, 0.5, 1 );
+    DEFAULT_CHAT_FRAME:AddMessage( '[SimpleCalc] ' .. message, 0.5, 0.5, 1 );
 end
 
 function SimpleCalc_EvalString( str )
-    local strFunc = loadstring( "return " .. str );
+    local strFunc = loadstring( 'return ' .. str );
     if ( pcall( strFunc ) ) then
         return strFunc();
     else
@@ -210,6 +210,6 @@ function SimpleCalc_EvalString( str )
     end
 end
 
-local SimpleCalc = CreateFrame( "Frame", "SimpleCalc", UIParent );
-SimpleCalc:SetScript( "OnEvent", function() SimpleCalc_OnLoad() end );
-SimpleCalc:RegisterEvent( "PLAYER_LOGIN" );
+local SimpleCalc = CreateFrame( 'Frame', 'SimpleCalc', UIParent );
+SimpleCalc:SetScript( 'OnEvent', function() SimpleCalc_OnLoad() end );
+SimpleCalc:RegisterEvent( 'PLAYER_LOGIN' );
