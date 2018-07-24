@@ -9,26 +9,6 @@ function SimpleCalc_getCurrencyAmount( currencyID )
     return format( "%s", currencyAmount );
 end
 
-local CHARVARS = {
-    [0]  = { achieves = GetTotalAchievementPoints() },
-    [1]  = { maxhonor = UnitHonorMax( 'player' ) },
-    [2]  = { maxhonour = UnitHonorMax( 'player' ) },
-    [3]  = { honor = UnitHonor( 'player' ) },
-    [4]  = { honour = UnitHonor( 'player' ) },
-    [5]  = { health = UnitHealthMax( 'player' ) },
-    [6]  = { hp = UnitHealthMax( 'player' ) },
-    [7]  = { power = UnitPowerMax( 'player' ) },
-    [8]  = { mana = UnitPowerMax( 'player' ) },
-    [9]  = { copper = GetMoney() },
-    [10] = { silver = GetMoney() / 100 },
-    [11] = { gold = GetMoney() / 10000 },
-    [12] = { maxxp= UnitXPMax( 'player' ) },
-    [13] = { xp = UnitXP( 'player' ) },
-    [14] = { garrison = SimpleCalc_getCurrencyAmount( GARRISON_CURRENCY_ID ) },
-    [15] = { orderhall = SimpleCalc_getCurrencyAmount( ORDERHALL_CURRENCY_ID ) },
-    [16] = { resources = SimpleCalc_getCurrencyAmount( RESOURCE_CURRENCY_ID ) }
-}
-
 function SimpleCalc_OnLoad()
     -- Register our slash commands
     SLASH_SIMPLECALC1 = "/simplecalc";
@@ -50,6 +30,25 @@ function SimpleCalc_ParseParameters( paramStr )
     local i = 0;
     local addVar = false;
     local calcVariable = "";
+    local charVars = {
+        [0]  = { achieves = GetTotalAchievementPoints() },
+        [1]  = { maxhonor = UnitHonorMax( 'player' ) },
+        [2]  = { maxhonour = UnitHonorMax( 'player' ) },
+        [3]  = { honor = UnitHonor( 'player' ) },
+        [4]  = { honour = UnitHonor( 'player' ) },
+        [5]  = { health = UnitHealthMax( 'player' ) },
+        [6]  = { hp = UnitHealthMax( 'player' ) },
+        [7]  = { power = UnitPowerMax( 'player' ) },
+        [8]  = { mana = UnitPowerMax( 'player' ) },
+        [9]  = { copper = GetMoney() },
+        [10] = { silver = GetMoney() / 100 },
+        [11] = { gold = GetMoney() / 10000 },
+        [12] = { maxxp = UnitXPMax( 'player' ) },
+        [13] = { xp = UnitXP( 'player' ) },
+        [14] = { garrison = SimpleCalc_getCurrencyAmount( GARRISON_CURRENCY_ID ) },
+        [15] = { orderhall = SimpleCalc_getCurrencyAmount( ORDERHALL_CURRENCY_ID ) },
+        [16] = { resources = SimpleCalc_getCurrencyAmount( RESOURCE_CURRENCY_ID ) }
+    }
     
     if ( paramStr == "" or paramStr == "help" ) then
         SimpleCalc_Usage();
@@ -62,7 +61,7 @@ function SimpleCalc_ParseParameters( paramStr )
             if ( param == "addvar" ) then
                 addVar = true;
             elseif ( param == "listvar" ) then
-                SimpleCalc_ListVariables();
+                SimpleCalc_ListVariables( charVars );
                 return;
             elseif ( param == "clearvar" ) then
                 calcVariables = {};
@@ -86,7 +85,7 @@ function SimpleCalc_ParseParameters( paramStr )
                     return;
                 end
             elseif ( i == 4 )then -- Should be number
-                local newParamStr = SimpleCalc_ApplyVariables( param );
+                local newParamStr = SimpleCalc_ApplyVariables( param, charVars );
                 local evalParam = SimpleCalc_EvalString( newParamStr );
                 if ( tonumber( evalParam ) == nil ) then
                     SimpleCalc_Error( "Invalid input: " .. param );
@@ -115,7 +114,7 @@ function SimpleCalc_ParseParameters( paramStr )
         return;
     end
 
-    local paramEval = SimpleCalc_ApplyVariables( paramStr );
+    local paramEval = SimpleCalc_ApplyVariables( paramStr, charVars );
     
     if ( string.match( paramEval, "[a-zA-Z]+" ) ) then
         SimpleCalc_Error( "Unrecognized variable!" );
@@ -134,11 +133,11 @@ function SimpleCalc_ParseParameters( paramStr )
     end
 end
 
-function SimpleCalc_ListVariables()
+function SimpleCalc_ListVariables( charVars )
     local userVars = "";
     local systemVars = "";
-    for i = 0, #CHARVARS, 1 do
-        for k, v in pairs( CHARVARS[i] ) do
+    for i = 0, #charVars, 1 do
+        for k, v in pairs( charVars[i] ) do
             if ( systemVars == "" ) then
                 systemVars = format( "System variables: %s = %s", k, v );
             else
@@ -162,10 +161,10 @@ function SimpleCalc_ListVariables()
     SimpleCalc_Message( userVars );
 end
 
-function SimpleCalc_ApplyVariables( str )
+function SimpleCalc_ApplyVariables( str, charVars )
     -- Apply reserved variables
-    for i = 0, #CHARVARS, 1 do
-        for k, v in pairs( CHARVARS[i] ) do
+    for i = 0, #charVars, 1 do
+        for k, v in pairs( charVars[i] ) do
             if str:find( k ) then
                 str = str:gsub( k, v );
             end
