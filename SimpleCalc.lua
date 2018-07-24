@@ -11,8 +11,8 @@ function SimpleCalc_OnLoad()
     SlashCmdList['SIMPLECALC'] = SimpleCalc_ParseParameters;
 
     -- Initialize our variables
-    if ( not calcVariables ) then
-        calcVariables = {};
+    if ( not SimpleCalc_Variables ) then
+        SimpleCalc_Variables = {};
     end
   
     -- Let the user know we're here
@@ -23,8 +23,7 @@ end
 function SimpleCalc_ParseParameters( paramStr )
     paramStr = string.lower( paramStr );
     local i = 0;
-    local addVar;
-    local calcVariable;
+    local addVar, calcVariable;
     local charVars = {
         [0]  = { achieves   = GetTotalAchievementPoints() },
         [1]  = { maxhonor   = UnitHonorMax( 'player' ) },
@@ -59,7 +58,7 @@ function SimpleCalc_ParseParameters( paramStr )
                 SimpleCalc_ListVariables( charVars );
                 return;
             elseif ( param == 'clearvar' ) then
-                calcVariables = {};
+                SimpleCalc_Variables = {};
                 SimpleCalc_Message( 'User variables cleared!' );
                 return;
             end
@@ -88,14 +87,12 @@ function SimpleCalc_ParseParameters( paramStr )
                     return;
                 else
                     if ( evalParam ~= 0 ) then
-                        calcVariables[calcVariable] = {};
-                        calcVariables[calcVariable][1] = calcVariable;
-                        calcVariables[calcVariable][2] = evalParam;
+                        SimpleCalc_Variables[calcVariable] = evalParam;
                         SimpleCalc_Message( 'Set ' .. calcVariable .. ' to ' .. evalParam );
                         return;
                     else -- Variables set to 0 are just wiped out
-                        calcVariables[calcVariable] = nil;
-                        SimpleCalc_Message( 'Reset variable : ' .. calcVariable );
+                        SimpleCalc_Variables[calcVariable] = nil;
+                        SimpleCalc_Message( 'Reset variable: ' .. calcVariable );
                         return;
                     end
                     addVar = false; -- This means there were no errors, so we'll reset.
@@ -129,8 +126,7 @@ function SimpleCalc_ParseParameters( paramStr )
 end
 
 function SimpleCalc_ListVariables( charVars )
-    local systemVars;
-    local userVars;
+    local systemVars, userVars;
     for i = 0, #charVars, 1 do
         for k, v in pairs( charVars[i] ) do
             if ( i == 0 ) then
@@ -140,13 +136,11 @@ function SimpleCalc_ListVariables( charVars )
             end
         end
     end
-    for i, calcVar in pairs( calcVariables ) do
-        if( calcVar[1] and calcVar[2] ) then
-            if ( not userVars ) then
-                userVars = format( 'User variables: %s = %s', calcVar[1], calcVar[2] );
-            else
-                userVars = format( '%s, %s = %s', userVars, calcVar[1], calcVar[2] );
-            end
+    for k, v in pairs( SimpleCalc_Variables ) do
+        if ( not userVars ) then
+            userVars = format( 'User variables: %s = %s', k, v );
+        else
+            userVars = format( '%s, %s = %s', userVars, k, v );
         end
     end
     SimpleCalc_Message( systemVars );
@@ -166,10 +160,8 @@ function SimpleCalc_ApplyVariables( str, charVars )
         end
     end
     -- Apply user variables
-    for i, calcVar in pairs( calcVariables ) do
-        if ( calcVar[1] and calcVar[2] ) then
-            str = str:gsub( calcVar[1], calcVar[2] );
-        end
+    for k, v in pairs( SimpleCalc_Variables ) do
+        str = str:gsub( k, v );
     end
     return str;
 end
