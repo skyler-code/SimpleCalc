@@ -27,25 +27,6 @@ function SimpleCalc_ParseParameters( paramStr )
     paramStr = paramStr:lower();
     local i = 0;
     local addVar, calcVariable, varIsGlobal, clearVar, clearGlobal, clearChar;
-    local charVars = {
-        [0]  = { achieves   = GetTotalAchievementPoints() },
-        [1]  = { maxhonor   = UnitHonorMax( 'player' ) },
-        [2]  = { maxhonour  = UnitHonorMax( 'player' ) },
-        [3]  = { honor      = UnitHonor( 'player' ) },
-        [4]  = { honour     = UnitHonor( 'player' ) },
-        [5]  = { health     = UnitHealthMax( 'player' ) },
-        [6]  = { hp         = UnitHealthMax( 'player' ) },
-        [7]  = { power      = UnitPowerMax( 'player' ) },
-        [8]  = { mana       = UnitPowerMax( 'player' ) },
-        [9]  = { copper     = GetMoney() },
-        [10] = { silver     = GetMoney() / 100 },
-        [11] = { gold       = GetMoney() / 10000 },
-        [12] = { maxxp      = UnitXPMax( 'player' ) },
-        [13] = { xp         = UnitXP( 'player' ) },
-        [14] = { garrison   = SimpleCalc_getCurrencyAmount( GARRISON_CURRENCY_ID ) },
-        [15] = { orderhall  = SimpleCalc_getCurrencyAmount( ORDERHALL_CURRENCY_ID ) },
-        [16] = { resources  = SimpleCalc_getCurrencyAmount( RESOURCE_CURRENCY_ID ) }
-    }
     
     if ( paramStr == '' or paramStr == 'help' ) then
         SimpleCalc_Usage();
@@ -57,7 +38,7 @@ function SimpleCalc_ParseParameters( paramStr )
             if ( param == 'addvar' ) then
                 addVar = true;
             elseif ( param == 'listvar' ) then
-                SimpleCalc_ListVariables( charVars );
+                SimpleCalc_ListVariables();
                 return;
             elseif ( param == 'clearvar' ) then
                 clearVar = true;
@@ -87,7 +68,7 @@ function SimpleCalc_ParseParameters( paramStr )
                     return;
                 end
             elseif ( i == 4 )then -- Should be number
-                local newParamStr = SimpleCalc_ApplyVariables( param, charVars );
+                local newParamStr = SimpleCalc_ApplyVariables( param );
                 local evalParam = SimpleCalc_EvalString( newParamStr );
                 if ( not tonumber( evalParam ) ) then
                     SimpleCalc_Error( 'Invalid input: ' .. param );
@@ -138,7 +119,7 @@ function SimpleCalc_ParseParameters( paramStr )
         return;
     end
 
-    local paramEval = SimpleCalc_ApplyVariables( paramStr, charVars );
+    local paramEval = SimpleCalc_ApplyVariables( paramStr );
     
     if ( paramEval:match( '[a-zA-Z]+' ) ) then
         SimpleCalc_Error( 'Unrecognized variable!' );
@@ -157,8 +138,39 @@ function SimpleCalc_ParseParameters( paramStr )
     end
 end
 
-function SimpleCalc_ListVariables( charVars )
+function SimpleCalc_getCharVariables()
+    local tXP, nRC = SimpleCalc_getAzeritePower();
+    local charGold = GetMoney();
+    local charHonorMax = UnitHonorMax( 'player' );
+    local charHonor = UnitHonor( 'player' );
+    local charHP = UnitHealthMax( 'player' );
+    local charMana = UnitPowerMax( 'player' );
+    return {
+        [0]  = { achieves   = GetTotalAchievementPoints() },
+        [1]  = { maxhonor   = charHonorMax },
+        [2]  = { maxhonour  = charHonorMax },
+        [3]  = { honor      = charHonor },
+        [4]  = { honour     = charHonor },
+        [5]  = { health     = charHP },
+        [6]  = { hp         = charHP },
+        [7]  = { power      = charMana },
+        [8]  = { mana       = charMana },
+        [9]  = { copper     = charGold },
+        [10] = { silver     = charGold / 100 },
+        [11] = { gold       = charGold / 10000 },
+        [12] = { maxxp      = UnitXPMax( 'player' ) },
+        [13] = { xp         = UnitXP( 'player' ) },
+        [14] = { ap         = tXP },
+        [15] = { apmax      = nRC },
+        [16] = { garrison   = SimpleCalc_getCurrencyAmount( GARRISON_CURRENCY_ID ) },
+        [17] = { orderhall  = SimpleCalc_getCurrencyAmount( ORDERHALL_CURRENCY_ID ) },
+        [18] = { resources  = SimpleCalc_getCurrencyAmount( RESOURCE_CURRENCY_ID ) }
+    };
+end
+
+function SimpleCalc_ListVariables()
     local systemVars, globalVars, userVars;
+    local charVars = SimpleCalc_getCharVariables();
     for i = 0, #charVars, 1 do
         for k, v in pairs( charVars[i] ) do
             if ( i == 0 ) then
@@ -193,7 +205,8 @@ function SimpleCalc_ListVariables( charVars )
     SimpleCalc_Message( userVars );
 end
 
-function SimpleCalc_ApplyVariables( str, charVars )
+function SimpleCalc_ApplyVariables( str )
+    local charVars = SimpleCalc_getCharVariables();
     -- Apply reserved variables
     for i = 0, #charVars, 1 do
         for k, v in pairs( charVars[i] ) do
@@ -216,6 +229,15 @@ end
 function SimpleCalc_getCurrencyAmount( currencyID )
     local _, currencyAmount = GetCurrencyInfo( currencyID );
     return format( '%s', currencyAmount );
+end
+
+function SimpleCalc_getAzeritePower()
+    if ( not C_AzeriteItem.HasActiveAzeriteItem() ) then
+        return 0, 0;
+    end
+
+    local azeriteItemLocation = C_AzeriteItem.FindActiveAzeriteItem();
+    return C_AzeriteItem.GetAzeriteItemXPInfo( azeriteItemLocation );
 end
 
 function SimpleCalc_Usage()
