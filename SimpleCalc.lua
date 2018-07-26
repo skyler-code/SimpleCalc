@@ -1,5 +1,5 @@
 -- Initialize SimpleCalc
-scversion = GetAddOnMetadata( 'SimpleCalc', 'Version' );
+local scversion = GetAddOnMetadata( 'SimpleCalc', 'Version' );
 local GARRISON_CURRENCY_ID = 824;
 local ORDERHALL_CURRENCY_ID = 1220;
 local RESOURCE_CURRENCY_ID = 1560;
@@ -138,7 +138,7 @@ function SimpleCalc_ParseParameters( paramStr )
     end
 end
 
-function SimpleCalc_getCharVariables()
+function SimpleCalc_getSystemVariables()
     local tXP, nRC = SimpleCalc_getAzeritePower();
     local charGold = GetMoney();
     local charHonorMax = UnitHonorMax( 'player' );
@@ -170,7 +170,7 @@ end
 
 function SimpleCalc_ListVariables()
     local systemVars, globalVars, userVars;
-    local charVars = SimpleCalc_getCharVariables();
+    local charVars = SimpleCalc_getSystemVariables();
     for i = 0, #charVars, 1 do
         for k, v in pairs( charVars[i] ) do
             if ( i == 0 ) then
@@ -206,7 +206,7 @@ function SimpleCalc_ListVariables()
 end
 
 function SimpleCalc_ApplyVariables( str )
-    local charVars = SimpleCalc_getCharVariables();
+    local charVars = SimpleCalc_getSystemVariables();
     -- Apply reserved variables
     for i = 0, #charVars, 1 do
         for k, v in pairs( charVars[i] ) do
