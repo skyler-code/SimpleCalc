@@ -215,12 +215,12 @@ function SimpleCalc_ApplyVariables( str )
             end
         end
     end
-    -- Apply global user variables
-    for k, v in pairs( calcVariables ) do
-        str = str:gsub( k, v );
-    end
     -- Apply character user variables
     for k, v in pairs( SimpleCalc_CharVariables ) do
+        str = str:gsub( k, v );
+    end
+    -- Apply global user variables
+    for k, v in pairs( calcVariables ) do
         str = str:gsub( k, v );
     end
     return str;
@@ -255,7 +255,7 @@ end
 function SimpleCalc_AddVarUsage()
     SimpleCalc_Message( 'Usage: /calc addvar <global(g)|char(c)> <variable> = <value|variable|expression>' );
     SimpleCalc_Message( 'Example: /calc addvar g mainGold = gold' );
-    SimpleCalc_Message( 'Note: Global variables are prioritized over the character\'s when evaluating expressions.' );
+    SimpleCalc_Message( 'Note: Character variables are prioritized over global when evaluating expressions.' );
 end
 
 -- Output errors
