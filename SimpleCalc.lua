@@ -1,14 +1,15 @@
 -- Initialize SimpleCalc
+local SimpleCalc = CreateFrame( 'Frame', 'SimpleCalc', UIParent );
 local scversion = GetAddOnMetadata( 'SimpleCalc', 'Version' );
 local GARRISON_CURRENCY_ID = 824;
 local ORDERHALL_CURRENCY_ID = 1220;
 local RESOURCE_CURRENCY_ID = 1560;
 
-function SimpleCalc_OnLoad()
+function SimpleCalc:OnLoad()
     -- Register our slash commands
     SLASH_SIMPLECALC1 = '/simplecalc';
     SLASH_SIMPLECALC2 = '/calc';
-    SlashCmdList['SIMPLECALC'] = SimpleCalc_ParseParameters;
+    SlashCmdList['SIMPLECALC'] = function(...) self:ParseParameters(...); end
 
     -- Initialize our variables
     if ( not SimpleCalc_CharVariables ) then
@@ -19,17 +20,17 @@ function SimpleCalc_OnLoad()
     end
   
     -- Let the user know we're here
-    SimpleCalc_Message( 'v' .. scversion .. ' initiated! Type: /calc for help.' );
+    self:Message( 'v' .. scversion .. ' initiated! Type: /calc for help.' );
 end
 
 -- Parse any user-passed parameters
-function SimpleCalc_ParseParameters( paramStr )
+function SimpleCalc:ParseParameters( paramStr )
     paramStr = paramStr:lower();
     local i = 0;
     local addVar, calcVariable, varIsGlobal, clearVar, clearGlobal, clearChar;
     
     if ( paramStr == '' or paramStr == 'help' ) then
-        SimpleCalc_Usage();
+        self:Usage();
         return;
     end
     
@@ -38,7 +39,7 @@ function SimpleCalc_ParseParameters( paramStr )
             if ( param == 'addvar' ) then
                 addVar = true;
             elseif ( param == 'listvar' ) then
-                SimpleCalc_ListVariables();
+                self:ListVariables();
                 return;
             elseif ( param == 'clearvar' ) then
                 clearVar = true;
@@ -49,30 +50,30 @@ function SimpleCalc_ParseParameters( paramStr )
                 if ( param == 'global' or param == 'g' ) then
                     varIsGlobal = true;
                 elseif ( param ~= 'char' and param ~= 'c' ) then
-                    SimpleCalc_Error( 'Invalid input: ' .. param );
-                    SimpleCalc_AddVarUsage();
+                    self:Error( 'Invalid input: ' .. param );
+                    self:AddVarUsage();
                     return;
                 end
             elseif ( i == 2 ) then -- Should be variable name
                 if not ( param:match( '[a-zA-Z]+' ) ) then
-                    SimpleCalc_Error( 'Invalid input: ' .. param );
-                    SimpleCalc_Error( 'New variable must contain 1 letter!' );
+                    self:Error( 'Invalid input: ' .. param );
+                    self:Error( 'New variable must contain 1 letter!' );
                     return;
                 else
                     calcVariable = param;
                 end
             elseif ( i == 3 ) then -- Should be '='
                 if ( param ~= '=' ) then
-                    SimpleCalc_Error( 'Invalid input: ' .. param );
-                    SimpleCalc_Error( 'You must use an equals sign!' );
+                    self:Error( 'Invalid input: ' .. param );
+                    self:Error( 'You must use an equals sign!' );
                     return;
                 end
             elseif ( i == 4 )then -- Should be number
-                local newParamStr = SimpleCalc_ApplyVariables( param );
-                local evalParam = SimpleCalc_EvalString( newParamStr );
+                local newParamStr = self:ApplyVariables( param );
+                local evalParam = self:EvalString( newParamStr );
                 if ( not tonumber( evalParam ) ) then
-                    SimpleCalc_Error( 'Invalid input: ' .. param );
-                    SimpleCalc_Error( 'Variables can only be set to numbers or existing variables!' );
+                    self:Error( 'Invalid input: ' .. param );
+                    self:Error( 'Variables can only be set to numbers or existing variables!' );
                 else
                     local saveLocation, saveLocationStr = SimpleCalc_CharVariables, 'Character';
                     if ( varIsGlobal ) then
@@ -80,10 +81,10 @@ function SimpleCalc_ParseParameters( paramStr )
                     end
                     if ( evalParam ~= 0 ) then
                         saveLocation[calcVariable] = evalParam;
-                        SimpleCalc_Message( '[' .. saveLocationStr .. '] ' .. 'set ' .. calcVariable .. ' to ' .. evalParam );
+                        self:Message( '[' .. saveLocationStr .. '] ' .. 'set ' .. calcVariable .. ' to ' .. evalParam );
                     else -- Variables set to 0 are just wiped out
                         saveLocation[calcVariable] = nil;
-                        SimpleCalc_Message( '[' .. saveLocationStr .. '] ' .. 'Reset variable: ' .. calcVariable );
+                        self:Message( '[' .. saveLocationStr .. '] ' .. 'Reset variable: ' .. calcVariable );
                     end
                 end
                 return;
@@ -101,45 +102,45 @@ function SimpleCalc_ParseParameters( paramStr )
     end
     
     if ( addVar ) then -- User must have just typed /calc addvar so we'll give them a usage message.
-        SimpleCalc_AddVarUsage();
+        self:AddVarUsage();
         return;
     end
 
     if ( clearVar ) then
         if ( clearGlobal ) then
             calcVariables = {};
-            SimpleCalc_Message( 'Global user variables cleared!' );
+            self:Message( 'Global user variables cleared!' );
         elseif ( clearChar ) then
             SimpleCalc_CharVariables = {};
-            SimpleCalc_Message( 'Character user variables cleared!' );
+            self:Message( 'Character user variables cleared!' );
         else
             calcVariables, SimpleCalc_CharVariables = {}, {};
-            SimpleCalc_Message( 'All user variables cleared!' );
+            self:Message( 'All user variables cleared!' );
         end
         return;
     end
 
-    local paramEval = SimpleCalc_ApplyVariables( paramStr );
+    local paramEval = self:ApplyVariables( paramStr );
     
     if ( paramEval:match( '[a-zA-Z]+' ) ) then
-        SimpleCalc_Error( 'Unrecognized variable!' );
-        SimpleCalc_Error( paramEval );
+        self:Error( 'Unrecognized variable!' );
+        self:Error( paramEval );
         return;
     end
     
     paramEval = paramEval:gsub( '%s+', '' ); -- Clean up whitespace
-    local evalStr = SimpleCalc_EvalString( paramEval );
+    local evalStr = self:EvalString( paramEval );
 
     if ( evalStr ) then
-        SimpleCalc_Message( paramStr .. ' = ' .. evalStr );
+        self:Message( paramStr .. ' = ' .. evalStr );
     else
-        SimpleCalc_Error( 'Could not evaluate expression! Maybe an unrecognized symbol?' );
-        SimpleCalc_Error( paramEval );
+        self:Error( 'Could not evaluate expression! Maybe an unrecognized symbol?' );
+        self:Error( paramEval );
     end
 end
 
-function SimpleCalc_getSystemVariables()
-    local tXP, nRC = SimpleCalc_getAzeritePower();
+function SimpleCalc:getSystemVariables()
+    local tXP, nRC = self:getAzeritePower();
     local charGold = GetMoney();
     local charHonorMax = UnitHonorMax( 'player' );
     local charHonor = UnitHonor( 'player' );
@@ -162,15 +163,15 @@ function SimpleCalc_getSystemVariables()
         [13] = { xp         = UnitXP( 'player' ) },
         [14] = { ap         = tXP },
         [15] = { apmax      = nRC },
-        [16] = { garrison   = SimpleCalc_getCurrencyAmount( GARRISON_CURRENCY_ID ) },
-        [17] = { orderhall  = SimpleCalc_getCurrencyAmount( ORDERHALL_CURRENCY_ID ) },
-        [18] = { resources  = SimpleCalc_getCurrencyAmount( RESOURCE_CURRENCY_ID ) }
+        [16] = { garrison   = self:getCurrencyAmount( GARRISON_CURRENCY_ID ) },
+        [17] = { orderhall  = self:getCurrencyAmount( ORDERHALL_CURRENCY_ID ) },
+        [18] = { resources  = self:getCurrencyAmount( RESOURCE_CURRENCY_ID ) }
     };
 end
 
-function SimpleCalc_ListVariables()
+function SimpleCalc:ListVariables()
     local systemVars, globalVars, userVars;
-    local charVars = SimpleCalc_getSystemVariables();
+    local charVars = self:getSystemVariables();
     for i = 0, #charVars, 1 do
         for k, v in pairs( charVars[i] ) do
             if ( i == 0 ) then
@@ -200,13 +201,13 @@ function SimpleCalc_ListVariables()
     if ( not userVars ) then
         userVars = 'There are no character user variables.';
     end
-    SimpleCalc_Message( systemVars );
-    SimpleCalc_Message( globalVars );
-    SimpleCalc_Message( userVars );
+    self:Message( systemVars );
+    self:Message( globalVars );
+    self:Message( userVars );
 end
 
-function SimpleCalc_ApplyVariables( str )
-    local charVars = SimpleCalc_getSystemVariables();
+function SimpleCalc:ApplyVariables( str )
+    local charVars = self:getSystemVariables();
     -- Apply reserved variables
     for i = 0, #charVars, 1 do
         for k, v in pairs( charVars[i] ) do
@@ -226,12 +227,12 @@ function SimpleCalc_ApplyVariables( str )
     return str;
 end
 
-function SimpleCalc_getCurrencyAmount( currencyID )
+function SimpleCalc:getCurrencyAmount( currencyID )
     local _, currencyAmount = GetCurrencyInfo( currencyID );
     return format( '%s', currencyAmount );
 end
 
-function SimpleCalc_getAzeritePower()
+function SimpleCalc:getAzeritePower()
     if ( not C_AzeriteItem.HasActiveAzeriteItem() ) then
         return 0, 0;
     end
@@ -240,35 +241,35 @@ function SimpleCalc_getAzeritePower()
     return C_AzeriteItem.GetAzeriteItemXPInfo( azeriteItemLocation );
 end
 
-function SimpleCalc_Usage()
-    SimpleCalc_Message( 'SimpleCalc (v' .. scversion .. ') - Simple mathematical calculator' );
-    SimpleCalc_Message( 'Usage: /calc <value> <symbol> <value>' );
-    SimpleCalc_Message( 'Usage: /calc addvar <variable> = <value>' );
-    SimpleCalc_Message( 'Example: 1650 + 2200 - honor' );
-    SimpleCalc_Message( 'value - A numeric or game value (honor, maxhonor, health, mana (or power), copper, silver, gold)' );
-    SimpleCalc_Message( 'symbol - A mathematical symbol (+, -, /, *)' );
-    SimpleCalc_Message( 'variable - A name to store a value under for future use' );
-    SimpleCalc_Message( 'Use /calc listvar to see SimpleCalc\'s and your saved variables' );
-    SimpleCalc_Message( 'Use /calc clearvar <global(g)|char(c)|all> to clear your saved variables. Defaults to all.' );
+function SimpleCalc:Usage()
+    self:Message( 'SimpleCalc (v' .. scversion .. ') - Simple mathematical calculator' );
+    self:Message( 'Usage: /calc <value> <symbol> <value>' );
+    self:Message( 'Usage: /calc addvar <variable> = <value>' );
+    self:Message( 'Example: 1650 + 2200 - honor' );
+    self:Message( 'value - A numeric or game value (honor, maxhonor, health, mana (or power), copper, silver, gold)' );
+    self:Message( 'symbol - A mathematical symbol (+, -, /, *)' );
+    self:Message( 'variable - A name to store a value under for future use' );
+    self:Message( 'Use /calc listvar to see SimpleCalc\'s and your saved variables' );
+    self:Message( 'Use /calc clearvar <global(g)|char(c)|all> to clear your saved variables. Defaults to all.' );
 end
 
-function SimpleCalc_AddVarUsage()
-    SimpleCalc_Message( 'Usage: /calc addvar <global(g)|char(c)> <variable> = <value|variable|expression>' );
-    SimpleCalc_Message( 'Example: /calc addvar g mainGold = gold' );
-    SimpleCalc_Message( 'Note: Character variables are prioritized over global when evaluating expressions.' );
+function SimpleCalc:AddVarUsage()
+    self:Message( 'Usage: /calc addvar <global(g)|char(c)> <variable> = <value|variable|expression>' );
+    self:Message( 'Example: /calc addvar g mainGold = gold' );
+    self:Message( 'Note: Character variables are prioritized over global when evaluating expressions.' );
 end
 
 -- Output errors
-function SimpleCalc_Error( message )
+function SimpleCalc:Error( message )
     DEFAULT_CHAT_FRAME:AddMessage( '[SimpleCalc] ' .. message, 0.8, 0.2, 0.2 );
 end
 
 -- Output messages
-function SimpleCalc_Message( message )
+function SimpleCalc:Message( message )
     DEFAULT_CHAT_FRAME:AddMessage( '[SimpleCalc]: ' .. message, 0.5, 0.5, 1 );
 end
 
-function SimpleCalc_EvalString( str )
+function SimpleCalc:EvalString( str )
     local strFunc = loadstring( 'return ' .. str );
     if ( pcall( strFunc ) ) then
         return strFunc();
@@ -277,6 +278,4 @@ function SimpleCalc_EvalString( str )
     end
 end
 
-local SimpleCalc = CreateFrame( 'Frame', 'SimpleCalc', UIParent );
-SimpleCalc:SetScript( 'OnEvent', function() SimpleCalc_OnLoad() end );
-SimpleCalc:RegisterEvent( 'PLAYER_LOGIN' );
+SimpleCalc:OnLoad();
