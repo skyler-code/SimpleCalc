@@ -68,7 +68,7 @@ function SimpleCalc:ParseParameters( paramStr )
                     self:Error( 'You must use an equals sign!' );
                     return;
                 end
-            elseif ( i == 4 )then -- Should be number
+            elseif ( i == 4 ) then -- Should be number
                 local newParamStr = param;
                 if ( newParamStr:match( '[a-zA-Z]+' ) ) then
                     newParamStr = self:ApplyVariables( newParamStr );
@@ -78,16 +78,16 @@ function SimpleCalc:ParseParameters( paramStr )
                     self:Error( 'Invalid input: ' .. param );
                     self:Error( 'Variables can only be set to numbers or existing variables!' );
                 else
-                    local saveLocation, saveLocationStr = SimpleCalc_CharVariables, 'Character';
+                    local saveLocation, saveLocationStr = SimpleCalc_CharVariables, '[Character] ';
                     if ( varIsGlobal ) then
-                        saveLocation, saveLocationStr = calcVariables, 'Global';
+                        saveLocation, saveLocationStr = calcVariables, '[Global] '
                     end
                     if ( evalParam ~= 0 ) then
                         saveLocation[calcVariable] = evalParam;
-                        self:Message( '[' .. saveLocationStr .. '] ' .. 'set ' .. calcVariable .. ' to ' .. evalParam );
+                        self:Message( saveLocationStr .. 'set \'' .. calcVariable .. '\' to ' .. evalParam );
                     else -- Variables set to 0 are just wiped out
                         saveLocation[calcVariable] = nil;
-                        self:Message( '[' .. saveLocationStr .. '] ' .. 'Reset variable: ' .. calcVariable );
+                        self:Message( saveLocationStr .. 'Reset variable: ' .. calcVariable );
                     end
                 end
                 return;
