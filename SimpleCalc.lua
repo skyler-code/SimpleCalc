@@ -187,25 +187,25 @@ end
 function SimpleCalc:ListVariables()
     local systemVars, globalVars, userVars;
     local charVars = self:getSystemVariables();
-    for k, v in self:sortTable( charVars ) do
+    for _,k in ipairs( self:sortTableForListing( charVars ) ) do
         if ( not systemVars ) then
-            systemVars = format( 'System variables: %s = %s', k, v );
+            systemVars = format( 'System variables: %s', k );
         else
-            systemVars = format( '%s, %s = %s', systemVars, k, v );
+            systemVars = format( '%s, %s', systemVars, k );
         end
     end
-    for k, v in self:sortTable( calcVariables ) do
+    for _,k in ipairs( self:sortTableForListing( calcVariables ) ) do
         if ( not globalVars ) then
-            globalVars = format( 'Global user variables: %s = %s', k, v );
+            globalVars = format( 'Global user variables: %s', k );
         else
-            globalVars = format( '%s, %s = %s', globalVars, k, v );
+            globalVars = format( '%s, %s', globalVars, k );
         end
     end
-    for k, v in self:sortTable( SimpleCalc_CharVariables ) do
+    for _,k in ipairs( self:sortTableForListing( SimpleCalc_CharVariables ) ) do
         if ( not userVars ) then
-            userVars = format( 'Character user variables: %s = %s', k, v );
+            userVars = format( 'Character user variables: %s', k );
         else
-            userVars = format( '%s, %s = %s', userVars, k, v );
+            userVars = format( '%s, %s', userVars, k );
         end
     end
     if ( not globalVars ) then
@@ -290,22 +290,13 @@ function SimpleCalc:EvalString( str )
     return nil;
 end
 
-function SimpleCalc:sortTable( t, f ) -- https://www.lua.org/pil/19.3.html
+function SimpleCalc:sortTableForListing( t ) -- https://www.lua.org/pil/19.3.html
     local a = {};
-    for n in pairs( t ) do
-        table.insert( a, n );
+    for n, v in pairs( t ) do
+        table.insert( a, n .. " = " .. v );
     end
-    table.sort( a, f );
-    local i = 0;
-    local iter = function()
-        i = i + 1;
-        if a[i] == nil then
-            return nil;
-        else
-            return a[i], t[a[i]];
-        end
-    end
-    return iter;
+    table.sort( a );
+    return a;
 end
 
 SimpleCalc:OnLoad();
