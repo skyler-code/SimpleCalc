@@ -1,9 +1,12 @@
 -- Initialize SimpleCalc
 local SimpleCalc = CreateFrame( 'Frame', 'SimpleCalc', UIParent );
 local scversion = GetAddOnMetadata( 'SimpleCalc', 'Version' );
-local GARRISON_CURRENCY_ID = 824;
-local ORDERHALL_CURRENCY_ID = 1220;
-local RESOURCE_CURRENCY_ID = 1560;
+
+local CURRENCY_IDS = {
+    GARRISON = 824,
+    ORDERHALL = 1220,
+    RESOURCES = 1560
+};
 
 function SimpleCalc:OnLoad()
     -- Register our slash commands
@@ -171,9 +174,9 @@ function SimpleCalc:getSystemVariables()
         xp         = UnitXP( 'player' ),
         ap         = tXP,
         apmax      = nRC,
-        garrison   = self:getCurrencyAmount( GARRISON_CURRENCY_ID ),
-        orderhall  = self:getCurrencyAmount( ORDERHALL_CURRENCY_ID ),
-        resources  = self:getCurrencyAmount( RESOURCE_CURRENCY_ID )
+        garrison   = self:getCurrencyAmount( CURRENCY_IDS.GARRISON ),
+        orderhall  = self:getCurrencyAmount( CURRENCY_IDS.ORDERHALL ),
+        resources  = self:getCurrencyAmount( CURRENCY_IDS.RESOURCES )
     };
 end
 
