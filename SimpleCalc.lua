@@ -28,16 +28,16 @@ end
 
 -- Parse any user-passed parameters
 function SimpleCalc:ParseParameters( paramStr )
-    paramStr = paramStr:lower();
+    local lowerParam = paramStr:lower();
     local i = 0;
     local addVar, calcVariable, varIsGlobal, clearVar, clearGlobal, clearChar;
 
-    if ( paramStr == '' or paramStr == 'help' ) then
+    if ( lowerParam == '' or lowerParam == 'help' ) then
         self:Usage();
         return;
     end
 
-    for param in paramStr:gmatch( '[^%s]+' ) do -- This loops through the user input (stuff after /calc). We're going to be checking for arguments such as 'help' or 'addvar' and acting accordingly.
+    for param in lowerParam:gmatch( '[^%s]+' ) do -- This loops through the user input (stuff after /calc). We're going to be checking for arguments such as 'help' or 'addvar' and acting accordingly.
         if ( i == 0 ) then
             if ( param == 'addvar' ) then
                 addVar = true;
@@ -58,9 +58,9 @@ function SimpleCalc:ParseParameters( paramStr )
                     return;
                 end
             elseif ( i == 2 ) then -- Should be variable name
-                if not ( param:match( '[a-zA-Z]+' ) ) then
+                if ( param:match( '[^a-z]' ) ) then
                     self:Error( 'Invalid input: ' .. param );
-                    self:Error( 'New variable must contain 1 letter!' );
+                    self:Error( 'Variable name can only contain letters!' );
                     return;
                 else
                     calcVariable = param;
@@ -73,7 +73,7 @@ function SimpleCalc:ParseParameters( paramStr )
                 end
             elseif ( i == 4 ) then -- Should be number
                 local newParamStr = param;
-                if ( newParamStr:match( '[a-zA-Z]+' ) ) then
+                if ( newParamStr:match( '[a-z]' ) ) then
                     newParamStr = self:ApplyVariables( newParamStr );
                 end
                 local evalParam = self:EvalString( newParamStr );
@@ -126,12 +126,12 @@ function SimpleCalc:ParseParameters( paramStr )
         return;
     end
 
-    local paramEval = paramStr;
-    if ( paramEval:match( '[a-zA-Z]+' ) ) then
+    local paramEval = lowerParam;
+    if ( paramEval:match( '[a-z]' ) ) then
         paramEval = self:ApplyVariables( paramEval );
     end
 
-    if ( paramEval:match( '[a-zA-Z]+' ) ) then
+    if ( paramEval:match( '[a-z]' ) ) then
         self:Error( 'Unrecognized variable!' );
         self:Error( paramEval );
         return;
