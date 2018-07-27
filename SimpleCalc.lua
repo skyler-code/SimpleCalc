@@ -282,9 +282,8 @@ function SimpleCalc:EvalString( str )
     local strFunc = loadstring( 'return ' .. str );
     if ( pcall( strFunc ) ) then
         return strFunc();
-    else
-        return false;
     end
+    return nil;
 end
 
 SimpleCalc:OnLoad();
