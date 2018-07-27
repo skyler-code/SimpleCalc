@@ -28,12 +28,12 @@ function SimpleCalc:ParseParameters( paramStr )
     paramStr = paramStr:lower();
     local i = 0;
     local addVar, calcVariable, varIsGlobal, clearVar, clearGlobal, clearChar;
-    
+
     if ( paramStr == '' or paramStr == 'help' ) then
         self:Usage();
         return;
     end
-    
+
     for param in paramStr:gmatch( '[^%s]+' ) do -- This loops through the user input (stuff after /calc). We're going to be checking for arguments such as 'help' or 'addvar' and acting accordingly.
         if ( i == 0 ) then
             if ( param == 'addvar' ) then
@@ -69,7 +69,10 @@ function SimpleCalc:ParseParameters( paramStr )
                     return;
                 end
             elseif ( i == 4 )then -- Should be number
-                local newParamStr = self:ApplyVariables( param );
+                local newParamStr = param;
+                if ( newParamStr:match( '[a-zA-Z]+' ) ) then
+                    newParamStr = self:ApplyVariables( newParamStr );
+                end
                 local evalParam = self:EvalString( newParamStr );
                 if ( not tonumber( evalParam ) ) then
                     self:Error( 'Invalid input: ' .. param );
@@ -100,7 +103,7 @@ function SimpleCalc:ParseParameters( paramStr )
         end
         i = i + 1;
     end
-    
+
     if ( addVar ) then -- User must have just typed /calc addvar so we'll give them a usage message.
         self:AddVarUsage();
         return;
@@ -120,14 +123,17 @@ function SimpleCalc:ParseParameters( paramStr )
         return;
     end
 
-    local paramEval = self:ApplyVariables( paramStr );
-    
+    local paramEval = paramStr;
+    if ( paramEval:match( '[a-zA-Z]+' ) ) then
+        paramEval = self:ApplyVariables( paramEval );
+    end
+
     if ( paramEval:match( '[a-zA-Z]+' ) ) then
         self:Error( 'Unrecognized variable!' );
         self:Error( paramEval );
         return;
     end
-    
+
     paramEval = paramEval:gsub( '%s+', '' ); -- Clean up whitespace
     local evalStr = self:EvalString( paramEval );
 
@@ -147,45 +153,45 @@ function SimpleCalc:getSystemVariables()
     local charHP = UnitHealthMax( 'player' );
     local charMana = UnitPowerMax( 'player' );
     return {
-        [0]  = { achieves   = GetTotalAchievementPoints() },
-        [1]  = { maxhonor   = charHonorMax },
-        [2]  = { maxhonour  = charHonorMax },
-        [3]  = { honor      = charHonor },
-        [4]  = { honour     = charHonor },
-        [5]  = { health     = charHP },
-        [6]  = { hp         = charHP },
-        [7]  = { power      = charMana },
-        [8]  = { mana       = charMana },
-        [9]  = { copper     = charGold },
-        [10] = { silver     = charGold / 100 },
-        [11] = { gold       = charGold / 10000 },
-        [12] = { maxxp      = UnitXPMax( 'player' ) },
-        [13] = { xp         = UnitXP( 'player' ) },
-        [14] = { ap         = tXP },
-        [15] = { apmax      = nRC },
-        [16] = { garrison   = self:getCurrencyAmount( GARRISON_CURRENCY_ID ) },
-        [17] = { orderhall  = self:getCurrencyAmount( ORDERHALL_CURRENCY_ID ) },
-        [18] = { resources  = self:getCurrencyAmount( RESOURCE_CURRENCY_ID ) }
+        achieves   = GetTotalAchievementPoints(),
+        maxhonor   = charHonorMax,
+        maxhonour  = charHonorMax,
+        honorleft  = charHonorMax - charHonor,
+        honourleft = charHonorMax - charHonor,
+        honor      = charHonor,
+        honour     = charHonor,
+        health     = charHP,
+        hp         = charHP,
+        power      = charMana,
+        mana       = charMana,
+        copper     = charGold,
+        silver     = charGold / 100,
+        gold       = charGold / 10000,
+        maxxp      = UnitXPMax( 'player' ),
+        xp         = UnitXP( 'player' ),
+        ap         = tXP,
+        apmax      = nRC,
+        garrison   = self:getCurrencyAmount( GARRISON_CURRENCY_ID ),
+        orderhall  = self:getCurrencyAmount( ORDERHALL_CURRENCY_ID ),
+        resources  = self:getCurrencyAmount( RESOURCE_CURRENCY_ID )
     };
 end
 
 function SimpleCalc:ListVariables()
     local systemVars, globalVars, userVars;
     local charVars = self:getSystemVariables();
-    for i = 0, #charVars, 1 do
-        for k, v in pairs( charVars[i] ) do
-            if ( i == 0 ) then
-                systemVars = format( 'System variables: %s = %s', k, v );
-            else
-                systemVars = format( '%s, %s = %s', systemVars, k, v );
-            end
+    for k, v in pairs( charVars ) do
+        if ( not systemVars ) then
+            systemVars = format( 'System variables: %s = %s', k, v );
+        else
+            systemVars = format( '%s, %s = %s', systemVars, k, v );
         end
     end
     for k, v in pairs( calcVariables ) do
         if ( not globalVars ) then
             globalVars = format( 'Global user variables: %s = %s', k, v );
         else
-            globalVars = format( '%s, %s = %s', userVars, k, v );
+            globalVars = format( '%s, %s = %s', globalVars, k, v );
         end
     end
     for k, v in pairs( SimpleCalc_CharVariables ) do
@@ -209,20 +215,16 @@ end
 function SimpleCalc:ApplyVariables( str )
     local charVars = self:getSystemVariables();
     -- Apply reserved variables
-    for i = 0, #charVars, 1 do
-        for k, v in pairs( charVars[i] ) do
-            if str:find( k ) then
-                str = str:gsub( k, v );
-            end
-        end
+    for k, v in pairs( charVars ) do
+        str = self:strVariableSub( str, k, v );
     end
     -- Apply character user variables
     for k, v in pairs( SimpleCalc_CharVariables ) do
-        str = str:gsub( k, v );
+        str = self:strVariableSub( str, k, v );
     end
     -- Apply global user variables
     for k, v in pairs( calcVariables ) do
-        str = str:gsub( k, v );
+        str = self:strVariableSub( str, k, v );
     end
     return str;
 end
@@ -239,6 +241,10 @@ function SimpleCalc:getAzeritePower()
 
     local azeriteItemLocation = C_AzeriteItem.FindActiveAzeriteItem();
     return C_AzeriteItem.GetAzeriteItemXPInfo( azeriteItemLocation );
+end
+
+function SimpleCalc:strVariableSub( str, k, v )
+    return str:gsub( '%f[%a_]' .. k .. '%f[^%a_]', v );
 end
 
 function SimpleCalc:Usage()
