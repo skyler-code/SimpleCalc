@@ -151,10 +151,13 @@ end
 function SimpleCalc:getSystemVariables()
     local tXP, nRC = self:getAzeritePower();
     local charGold = GetMoney();
-    local charHonorMax = UnitHonorMax( 'player' );
-    local charHonor = UnitHonor( 'player' );
-    local charHP = UnitHealthMax( 'player' );
-    local charMana = UnitPowerMax( 'player' );
+    local plr = 'player';
+    local charHonorMax = UnitHonorMax( plr );
+    local charHonor = UnitHonor( plr );
+    local charHP = UnitHealthMax( plr );
+    local charMana = UnitPowerMax( plr );
+    local maxxp = UnitXPMax( plr );
+    local xp = UnitXP( plr );
     return {
         achieves   = GetTotalAchievementPoints(),
         maxhonor   = charHonorMax,
@@ -170,8 +173,9 @@ function SimpleCalc:getSystemVariables()
         copper     = charGold,
         silver     = charGold / 100,
         gold       = charGold / 10000,
-        maxxp      = UnitXPMax( 'player' ),
-        xp         = UnitXP( 'player' ),
+        maxxp      = maxxp,
+        xp         = xp,
+        xpleft     = maxxp - xp,
         ap         = tXP,
         apmax      = nRC,
         garrison   = self:getCurrencyAmount( CURRENCY_IDS.GARRISON ),
@@ -183,21 +187,21 @@ end
 function SimpleCalc:ListVariables()
     local systemVars, globalVars, userVars;
     local charVars = self:getSystemVariables();
-    for k, v in pairs( charVars ) do
+    for k, v in self:sortTable( charVars ) do
         if ( not systemVars ) then
             systemVars = format( 'System variables: %s = %s', k, v );
         else
             systemVars = format( '%s, %s = %s', systemVars, k, v );
         end
     end
-    for k, v in pairs( calcVariables ) do
+    for k, v in self:sortTable( calcVariables ) do
         if ( not globalVars ) then
             globalVars = format( 'Global user variables: %s = %s', k, v );
         else
             globalVars = format( '%s, %s = %s', globalVars, k, v );
         end
     end
-    for k, v in pairs( SimpleCalc_CharVariables ) do
+    for k, v in self:sortTable( SimpleCalc_CharVariables ) do
         if ( not userVars ) then
             userVars = format( 'Character user variables: %s = %s', k, v );
         else
@@ -284,6 +288,24 @@ function SimpleCalc:EvalString( str )
         return strFunc();
     end
     return nil;
+end
+
+function SimpleCalc:sortTable( t, f ) -- https://www.lua.org/pil/19.3.html
+    local a = {};
+    for n in pairs( t ) do
+        table.insert( a, n );
+    end
+    table.sort( a, f );
+    local i = 0;
+    local iter = function()
+        i = i + 1;
+        if a[i] == nil then
+            return nil;
+        else
+            return a[i], t[a[i]];
+        end
+    end
+    return iter;
 end
 
 SimpleCalc:OnLoad();
