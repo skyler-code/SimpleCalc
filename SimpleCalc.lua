@@ -3,9 +3,10 @@ local SimpleCalc = CreateFrame( 'Frame', 'SimpleCalc', UIParent );
 local scversion = GetAddOnMetadata( 'SimpleCalc', 'Version' );
 
 local CURRENCY_IDS = {
-    GARRISON = 824,
-    ORDERHALL = 1220,
-    RESOURCES = 1560
+    garrison = 824,
+    orderhall = 1220,
+    resources = 1560,
+    oil = 1101
 };
 
 function SimpleCalc:OnLoad()
@@ -158,7 +159,7 @@ function SimpleCalc:getSystemVariables()
     local mana = UnitPowerMax( p );
     local maxxp = UnitXPMax( p );
     local xp = UnitXP( p );
-    return {
+    local variables = {
         achieves   = GetTotalAchievementPoints(),
         maxhonor   = honorMax,
         maxhonour  = honorMax,
@@ -177,11 +178,10 @@ function SimpleCalc:getSystemVariables()
         xp         = xp,
         xpleft     = maxxp - xp,
         ap         = tXP,
-        apmax      = nRC,
-        garrison   = self:getCurrencyAmount( CURRENCY_IDS.GARRISON ),
-        orderhall  = self:getCurrencyAmount( CURRENCY_IDS.ORDERHALL ),
-        resources  = self:getCurrencyAmount( CURRENCY_IDS.RESOURCES )
+        apmax      = nRC
     };
+    variables = self:ApplyCurrencies( variables );
+    return variables;
 end
 
 function SimpleCalc:ListVariables()
@@ -236,9 +236,12 @@ function SimpleCalc:ApplyVariables( str )
     return str;
 end
 
-function SimpleCalc:getCurrencyAmount( currencyID )
-    local _, currencyAmount = GetCurrencyInfo( currencyID );
-    return format( '%s', currencyAmount );
+function SimpleCalc:ApplyCurrencies( varTable )
+    for k, v in pairs( CURRENCY_IDS ) do
+        local _, currencyAmount = GetCurrencyInfo( v );
+        varTable[k] = currencyAmount;
+    end
+    return varTable;
 end
 
 function SimpleCalc:getAzeritePower()
