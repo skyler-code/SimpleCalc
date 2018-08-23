@@ -6,7 +6,8 @@ local CURRENCY_IDS = {
     garrison = 824,
     orderhall = 1220,
     resources = 1560,
-    oil = 1101
+    oil = 1101,
+    dubloon = 1710
 };
 
 function SimpleCalc:OnLoad()
