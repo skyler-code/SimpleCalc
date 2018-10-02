@@ -23,6 +23,9 @@ function SimpleCalc:OnLoad()
     if ( not calcVariables ) then
         calcVariables = {};
     end
+    if ( not SimpleCalc_LastResult ) then
+        SimpleCalc_LastResult = 0;
+    end
   
     -- Let the user know we're here
     self:Message( 'v' .. scversion .. ' initiated! Type: /calc for help.' );
@@ -129,6 +132,12 @@ function SimpleCalc:ParseParameters( paramStr )
     end
 
     local paramEval = lowerParam;
+
+    if ( paramEval:match( '^[%%%+%-%*%^][%da-z]' ) ) then
+        paramEval = format( '%s%s', SimpleCalc_LastResult, paramEval );
+        paramStr = format( '%s%s', SimpleCalc_LastResult, paramStr );
+    end
+
     if ( paramEval:match( '[a-z]' ) ) then
         paramEval = self:ApplyVariables( paramEval );
     end
@@ -143,7 +152,8 @@ function SimpleCalc:ParseParameters( paramStr )
     local evalStr = self:EvalString( paramEval );
 
     if ( evalStr ) then
-        self:Message( paramStr .. ' = ' .. evalStr );
+        self:Message( paramEval .. ' = ' .. evalStr );
+        SimpleCalc_LastResult = evalStr;
     else
         self:Error( 'Could not evaluate expression! Maybe an unrecognized symbol?' );
         self:Error( paramEval );
@@ -160,6 +170,7 @@ function SimpleCalc:getSystemVariables()
     local mana = UnitPowerMax( p );
     local maxxp = UnitXPMax( p );
     local xp = UnitXP( p );
+    local lastResult = SimpleCalc_LastResult;
     local variables = {
         achieves   = GetTotalAchievementPoints(),
         maxhonor   = honorMax,
@@ -179,60 +190,45 @@ function SimpleCalc:getSystemVariables()
         xp         = xp,
         xpleft     = maxxp - xp,
         ap         = tXP,
-        apmax      = nRC
+        apmax      = nRC,
+        last       = lastResult
     };
     variables = self:ApplyCurrencies( variables );
     return variables;
 end
 
+function SimpleCalc:getVariableTables()
+    local system = { type='System', list=self:getSystemVariables() };
+    local global = { type='Global', list=calcVariables, showEmpty=true };
+    local character = { type='Character', list=SimpleCalc_CharVariables, showEmpty=true };
+    return {system, global, character}
+end
+
 function SimpleCalc:ListVariables()
-    local systemVars, globalVars, userVars;
-    local charVars = self:getSystemVariables();
-    for _,k in ipairs( self:sortTableForListing( charVars ) ) do
-        if ( not systemVars ) then
-            systemVars = format( 'System variables: %s', k );
-        else
-            systemVars = format( '%s, %s', systemVars, k );
+    local function list( var )
+        local returnStr;
+        for _,k in ipairs( self:sortTableForListing( var['list'] ) ) do
+            if ( not returnStr ) then
+                returnStr = format( '%s variables: %s', var['type'], k );
+            else
+                returnStr = format( '%s, %s', returnStr, k );
+            end
         end
-    end
-    for _,k in ipairs( self:sortTableForListing( calcVariables ) ) do
-        if ( not globalVars ) then
-            globalVars = format( 'Global user variables: %s', k );
-        else
-            globalVars = format( '%s, %s', globalVars, k );
+        if( var['showEmpty'] and not returnStr) then
+            returnStr = format( 'There are no %s user variables.', var['type']:lower() );
         end
+        self:Message( returnStr );
     end
-    for _,k in ipairs( self:sortTableForListing( SimpleCalc_CharVariables ) ) do
-        if ( not userVars ) then
-            userVars = format( 'Character user variables: %s', k );
-        else
-            userVars = format( '%s, %s', userVars, k );
-        end
+    for _,varType in ipairs( self:getVariableTables() ) do
+        list( varType );
     end
-    if ( not globalVars ) then
-        globalVars = 'There are no global user variables.';
-    end
-    if ( not userVars ) then
-        userVars = 'There are no character user variables.';
-    end
-    self:Message( systemVars );
-    self:Message( globalVars );
-    self:Message( userVars );
 end
 
 function SimpleCalc:ApplyVariables( str )
-    local charVars = self:getSystemVariables();
-    -- Apply reserved variables
-    for k, v in pairs( charVars ) do
-        str = self:strVariableSub( str, k, v );
-    end
-    -- Apply character user variables
-    for k, v in pairs( SimpleCalc_CharVariables ) do
-        str = self:strVariableSub( str, k, v );
-    end
-    -- Apply global user variables
-    for k, v in pairs( calcVariables ) do
-        str = self:strVariableSub( str, k, v );
+    for _,varType in ipairs( self:getVariableTables() ) do
+        for k, v in pairs( varType['list'] ) do
+            str = self:strVariableSub( str, k, v );
+        end
     end
     return str;
 end
