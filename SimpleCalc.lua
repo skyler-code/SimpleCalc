@@ -133,7 +133,7 @@ function SimpleCalc:ParseParameters( paramStr )
 
     local paramEval = lowerParam;
 
-    if ( paramEval:match( '^[%%%+%-%*%^][%da-z]' ) ) then
+    if ( paramEval:match( '^[%%%+%-%*%^%/]' ) ) then
         paramEval = format( '%s%s', SimpleCalc_LastResult, paramEval );
         paramStr = format( '%s%s', SimpleCalc_LastResult, paramStr );
     end
