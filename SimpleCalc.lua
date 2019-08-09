@@ -2,14 +2,6 @@
 local SimpleCalc = CreateFrame( 'Frame', 'SimpleCalc', UIParent );
 local scversion = GetAddOnMetadata( 'SimpleCalc', 'Version' );
 
-local CURRENCY_IDS = {
-    garrison = 824,
-    orderhall = 1220,
-    resources = 1560,
-    oil = 1101,
-    dubloon = 1710
-};
-
 function SimpleCalc:OnLoad()
     -- Register our slash commands
     SLASH_SIMPLECALC1 = '/simplecalc';
@@ -161,24 +153,13 @@ function SimpleCalc:ParseParameters( paramStr )
 end
 
 function SimpleCalc:getSystemVariables()
-    local tXP, nRC = self:getAzeritePower();
     local gold = GetMoney();
     local p = 'player';
-    local honorMax = UnitHonorMax( p );
-    local honor = UnitHonor( p );
-    local hp = UnitHealthMax( p );
     local mana = UnitPowerMax( p );
     local maxxp = UnitXPMax( p );
     local xp = UnitXP( p );
     local lastResult = SimpleCalc_LastResult;
     local variables = {
-        achieves   = GetTotalAchievementPoints(),
-        maxhonor   = honorMax,
-        maxhonour  = honorMax,
-        honorleft  = honorMax - honor,
-        honourleft = honorMax - honor,
-        honor      = honor,
-        honour     = honor,
         health     = hp,
         hp         = hp,
         power      = mana,
@@ -189,11 +170,8 @@ function SimpleCalc:getSystemVariables()
         maxxp      = maxxp,
         xp         = xp,
         xpleft     = maxxp - xp,
-        ap         = tXP,
-        apmax      = nRC,
         last       = lastResult
     };
-    variables = self:ApplyCurrencies( variables );
     return variables;
 end
 
@@ -231,23 +209,6 @@ function SimpleCalc:ApplyVariables( str )
         end
     end
     return str;
-end
-
-function SimpleCalc:ApplyCurrencies( varTable )
-    for k, v in pairs( CURRENCY_IDS ) do
-        local _, currencyAmount = GetCurrencyInfo( v );
-        varTable[k] = currencyAmount;
-    end
-    return varTable;
-end
-
-function SimpleCalc:getAzeritePower()
-    if ( not C_AzeriteItem.HasActiveAzeriteItem() ) then
-        return 0, 0;
-    end
-
-    local azeriteItemLocation = C_AzeriteItem.FindActiveAzeriteItem();
-    return C_AzeriteItem.GetAzeriteItemXPInfo( azeriteItemLocation );
 end
 
 function SimpleCalc:strVariableSub( str, k, v )
