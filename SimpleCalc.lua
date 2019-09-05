@@ -155,6 +155,7 @@ end
 function SimpleCalc:getSystemVariables()
     local gold = GetMoney();
     local p = 'player';
+    local hp = UnitHealthMax( p );
     local mana = UnitPowerMax( p );
     local maxxp = UnitXPMax( p );
     local xp = UnitXP( p );
