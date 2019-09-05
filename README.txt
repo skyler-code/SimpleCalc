@@ -19,6 +19,7 @@ A selection of in-game values has been added to make life easier when doing cert
 * copper - Total copper (1g 50s would be displayed as 15,000 copper)
 * maxxp - XP required to level
 * xp - Current XP
+* str, agi, stam, int, spirit, armor - Your character's stats
 
 For example:
 
