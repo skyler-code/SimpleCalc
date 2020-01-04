@@ -170,7 +170,6 @@ function SimpleCalc:getSystemVariables()
     local mana = UnitPowerMax( p );
     local maxxp = UnitXPMax( p );
     local xp = UnitXP( p );
-    local lastResult = SimpleCalc_LastResult;
     local variables = {
         achieves   = GetTotalAchievementPoints(),
         maxhonor   = honorMax,
@@ -191,7 +190,8 @@ function SimpleCalc:getSystemVariables()
         xpleft     = maxxp - xp,
         ap         = tXP,
         apmax      = nRC,
-        last       = lastResult
+        apleft     = nRC - tXP,
+        last       = SimpleCalc_LastResult
     };
     variables = self:ApplyCurrencies( variables );
     return variables;
@@ -201,7 +201,7 @@ function SimpleCalc:getVariableTables()
     local system = { type='System', list=self:getSystemVariables() };
     local global = { type='Global', list=calcVariables, showEmpty=true };
     local character = { type='Character', list=SimpleCalc_CharVariables, showEmpty=true };
-    return {system, global, character}
+    return ipairs( { system, global, character } )
 end
 
 function SimpleCalc:ListVariables()
@@ -219,13 +219,13 @@ function SimpleCalc:ListVariables()
         end
         self:Message( returnStr );
     end
-    for _,varType in ipairs( self:getVariableTables() ) do
+    for _,varType in self:getVariableTables() do
         list( varType );
     end
 end
 
 function SimpleCalc:ApplyVariables( str )
-    for _,varType in ipairs( self:getVariableTables() ) do
+    for _,varType in self:getVariableTables() do
         for k, v in pairs( varType['list'] ) do
             str = self:strVariableSub( str, k, v );
         end
