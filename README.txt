@@ -31,8 +31,13 @@ For example:
 /calc 1650 + 2200 - honour
 [SimpleCalc] 1650 + 2200 - honour = 3078
 
+Let's say you need 4250 gold. You can see how much gold you need by doing:
+/calc 4250-gold
+[SimpleCalc] 4250-3125.5652 = 1124.4348
+That means you would need 1124g 43s 48c
+
 Support for user defined variables was added in version 0.4. Variables persist across sessions, so you can save values for later use really easily.
-To save a value or calculation: /calc addvar x = 1024 or /calc addvar x = 32*2+64
+To save a value or calculation: /calc addvar mountGold = 4250 or /calc addvar x = 32*2+64 or even /calc addvar mountGold+500+240
 
 Comments, suggestions and bug reports are most welcome!
 
