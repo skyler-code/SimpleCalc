@@ -1,4 +1,4 @@
-SimpleCalc - Copyright (c) 2018
+SimpleCalc - Copyright (c) 2020
 
 --[ Description ]--
 
