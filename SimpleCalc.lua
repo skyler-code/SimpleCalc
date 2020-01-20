@@ -153,39 +153,38 @@ function SimpleCalc:ParseParameters( paramStr )
 end
 
 function SimpleCalc:getSystemVariables()
-    local gold = GetMoney();
     local p = 'player';
-    local hp = UnitHealthMax( p );
-    local baseStr, strength = UnitStat(p, 1);
-    local baseAgi, agility = UnitStat(p, 2);
-    local baseStam, stamina = UnitStat(p, 3);
-    local baseInt, intellect = UnitStat(p, 4);
-    local baseSpirit, spirit = UnitStat(p, 5);
-    local mana = UnitPowerMax( p );
-    local maxxp = UnitXPMax( p );
-    local baseArmor, effectiveArmor, armor = UnitArmor( p );
-    local xp = UnitXP( p );
-    local lastResult = SimpleCalc_LastResult;
-    local variables = {
+	local _, strength = UnitStat(p, 1);
+	local _, agility = UnitStat(p, 2);
+	local _, stamina = UnitStat(p, 3);
+	local _, intellect = UnitStat(p, 4);
+	local _, spirit = UnitStat(p, 5);
+	local baseArmor, effectiveArmor, armor = UnitArmor( p );
+	local health = UnitHealthMax( p );
+	local power = UnitPowerMax( p );
+	local money = GetMoney();
+	local maxxp = UnitXPMax( p );
+	local xp = UnitXP( p );
+
+    return {
         str        = strength,
         agi        = agility,
         stam       = stamina,
         int        = intellect,
         spirit     = spirit,
         armor      = armor,
-        health     = hp,
-        hp         = hp,
-        power      = mana,
-        mana       = mana,
-        copper     = gold,
-        silver     = gold / 100,
-        gold       = gold / 10000,
+        health     = health,
+        hp         = health,
+        power      = power,
+        mana       = power,
+        copper     = money,
+        silver     = money / 100,
+        gold       = money / 10000,
         maxxp      = maxxp,
         xp         = xp,
         xpleft     = maxxp - xp,
-        last       = lastResult
+        last       = SimpleCalc_LastResult
     };
-    return variables;
 end
 
 function SimpleCalc:getVariableTables()
