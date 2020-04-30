@@ -1,5 +1,5 @@
-local addonName = GetAddOnInfo("SimpleCalc")
 -- Initialize SimpleCalc
+local addonName = GetAddOnInfo("SimpleCalc")
 local SimpleCalc = CreateFrame( 'Frame', addonName, UIParent )
 local scversion = GetAddOnMetadata( addonName, 'Version' )
 
@@ -44,21 +44,22 @@ function SimpleCalc:OnEvent(event, eventAddon)
 end
 
 function SimpleCalc:InitializeVariables()
+    local p = "player"
     self.variables = {
         achieves  = function() return GetTotalAchievementPoints() end,
-        maxhonor  = function() return UnitHonorMax("player") end,
-        maxhonour = function() return UnitHonorMax("player") end,
-        honorLeft = function() return UnitHonorMax("player") - UnitHonor("player") end,
-        health    = function() return UnitHealthMax("player") end,
-        hp        = function() return UnitHealthMax("player") end,
-        power     = function() return UnitPowerMax("player") end,
-        mana      = function() return UnitPowerMax("player") end,
+        maxhonor  = function() return UnitHonorMax(p) end,
+        maxhonour = function() return UnitHonorMax(p) end,
+        honorLeft = function() return UnitHonorMax(p) - UnitHonor(p) end,
+        health    = function() return UnitHealthMax(p) end,
+        hp        = function() return UnitHealthMax(p) end,
+        power     = function() return UnitPowerMax(p) end,
+        mana      = function() return UnitPowerMax(p) end,
         copper    = function() return GetMoney() end,
         silver    = function() return GetMoney() / 100 end,
         gold      = function() return GetMoney() / 10000 end,
-        maxxp     = function() return UnitXPMax("player") end,
-        xp        = function() return UnitXP("player") end,
-        xpleft    = function() return UnitXPMax("player") - UnitXP("player") end,
+        maxxp     = function() return UnitXPMax(p) end,
+        xp        = function() return UnitXP(p) end,
+        xpleft    = function() return UnitXPMax(p) - UnitXP(p) end,
         ap        = function() return select(1, self:getAzeritePower()) or 0 end,
         apmax     = function() return select(2, self:getAzeritePower()) or 0 end,
         apleft    = function() local tXP, nRC = self:getAzeritePower(); return nRC - tXP end,
