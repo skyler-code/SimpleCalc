@@ -61,7 +61,7 @@ function SimpleCalc:InitializeVariables()
         xpleft    = function() return UnitXPMax("player") - UnitXP("player") end,
         ap        = function() return select(1, self:getAzeritePower()) or 0 end,
         apmax     = function() return select(2, self:getAzeritePower()) or 0 end,
-        apleft    = function() local tXP, nRC = self:getAzeritePower(); return tXP - nRC end,
+        apleft    = function() local tXP, nRC = self:getAzeritePower(); return nRC - tXP end,
         last      = function() return self.lastResult end
     }
 
@@ -241,11 +241,8 @@ function SimpleCalc:ApplyVariables( str )
     return str;
 end
 
-function SimpleCalc:ApplyCurrencies( varTable )
-end
-
 function SimpleCalc:getAzeritePower()
-    if ( not C_AzeriteItem.HasActiveAzeriteItem() ) then
+    if not C_AzeriteItem or not C_AzeriteItem.HasActiveAzeriteItem() then
         return 0, 0;
     end
 
