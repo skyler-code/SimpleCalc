@@ -1,14 +1,16 @@
+local addonName = GetAddOnInfo("SimpleCalc")
 -- Initialize SimpleCalc
-local SimpleCalc = CreateFrame( 'Frame', 'SimpleCalc', UIParent );
-local scversion = GetAddOnMetadata( 'SimpleCalc', 'Version' );
+local SimpleCalc = CreateFrame( 'Frame', addonName, UIParent )
+local scversion = GetAddOnMetadata( addonName, 'Version' )
+
 
 local CURRENCY_IDS = {
-    garrison = 824,
+    garrison  = 824,
     orderhall = 1220,
     resources = 1560,
-    oil = 1101,
-    dubloon = 1710
-};
+    oil       = 1101,
+    dubloon   = 1710
+}
 
 function SimpleCalc:OnLoad()
     -- Register our slash commands
@@ -24,11 +26,49 @@ function SimpleCalc:OnLoad()
         calcVariables = {};
     end
     if ( not SimpleCalc_LastResult ) then
-        SimpleCalc_LastResult = 0;
+        self:setLastResult(0)
+    else
+        self:setLastResult(SimpleCalc_LastResult);
     end
-  
+
+    self:InitializeVariables()
+
     -- Let the user know we're here
     self:Message( 'v' .. scversion .. ' initiated! Type: /calc for help.' );
+end
+
+function SimpleCalc:OnEvent(event, eventAddon)
+    if event == "ADDON_LOADED" and eventAddon == addonName then
+        self:OnLoad()
+    end
+end
+
+function SimpleCalc:InitializeVariables()
+    self.variables = {
+        achieves  = function() return GetTotalAchievementPoints() end,
+        maxhonor  = function() return UnitHonorMax("player") end,
+        maxhonour = function() return UnitHonorMax("player") end,
+        honorLeft = function() return UnitHonorMax("player") - UnitHonor("player") end,
+        health    = function() return UnitHealthMax("player") end,
+        hp        = function() return UnitHealthMax("player") end,
+        power     = function() return UnitPowerMax("player") end,
+        mana      = function() return UnitPowerMax("player") end,
+        copper    = function() return GetMoney() end,
+        silver    = function() return GetMoney() / 100 end,
+        gold      = function() return GetMoney() / 10000 end,
+        maxxp     = function() return UnitXPMax("player") end,
+        xp        = function() return UnitXP("player") end,
+        xpleft    = function() return UnitXPMax("player") - UnitXP("player") end,
+        ap        = function() return select(1, self:getAzeritePower()) or 0 end,
+        apmax     = function() return select(2, self:getAzeritePower()) or 0 end,
+        apleft    = function() local tXP, nRC = self:getAzeritePower(); return tXP - nRC end,
+        last      = function() return self.lastResult end
+    }
+
+    for k, v in pairs( CURRENCY_IDS ) do
+        self.variables[k] = function() return select(2, GetCurrencyInfo( v )) or 0 end
+    end
+
 end
 
 -- Parse any user-passed parameters
@@ -134,8 +174,8 @@ function SimpleCalc:ParseParameters( paramStr )
     local paramEval = lowerParam;
 
     if ( paramEval:match( '^[%%%+%-%*%^%/]' ) ) then
-        paramEval = format( '%s%s', SimpleCalc_LastResult, paramEval );
-        paramStr = format( '%s%s', SimpleCalc_LastResult, paramStr );
+        paramEval = format( '%s%s', self.lastResult, paramEval );
+        paramStr = format( '%s%s', self.lastResult, paramStr );
     end
 
     if ( paramEval:match( '[a-z]' ) ) then
@@ -152,53 +192,21 @@ function SimpleCalc:ParseParameters( paramStr )
     local evalStr = self:EvalString( paramEval );
 
     if ( evalStr ) then
-        self:Message( paramEval .. ' = ' .. evalStr );
-        SimpleCalc_LastResult = evalStr;
+        self:Message( paramEval .. ' = ' .. evalStr )
+        self:setLastResult(evalStr)
     else
         self:Error( 'Could not evaluate expression! Maybe an unrecognized symbol?' );
         self:Error( paramEval );
     end
 end
 
-function SimpleCalc:getSystemVariables()
-    local tXP, nRC = self:getAzeritePower();
-    local gold = GetMoney();
-    local p = 'player';
-    local honorMax = UnitHonorMax( p );
-    local honor = UnitHonor( p );
-    local hp = UnitHealthMax( p );
-    local mana = UnitPowerMax( p );
-    local maxxp = UnitXPMax( p );
-    local xp = UnitXP( p );
-    local variables = {
-        achieves   = GetTotalAchievementPoints(),
-        maxhonor   = honorMax,
-        maxhonour  = honorMax,
-        honorleft  = honorMax - honor,
-        honourleft = honorMax - honor,
-        honor      = honor,
-        honour     = honor,
-        health     = hp,
-        hp         = hp,
-        power      = mana,
-        mana       = mana,
-        copper     = gold,
-        silver     = gold / 100,
-        gold       = gold / 10000,
-        maxxp      = maxxp,
-        xp         = xp,
-        xpleft     = maxxp - xp,
-        ap         = tXP,
-        apmax      = nRC,
-        apleft     = nRC - tXP,
-        last       = SimpleCalc_LastResult
-    };
-    variables = self:ApplyCurrencies( variables );
-    return variables;
+function SimpleCalc:setLastResult(val)
+    SimpleCalc_LastResult = val
+    self.lastResult = val
 end
 
 function SimpleCalc:getVariableTables()
-    local system = { type='System', list=self:getSystemVariables() };
+    local system = { type='System', list=self.variables };
     local global = { type='Global', list=calcVariables, showEmpty=true };
     local character = { type='Character', list=SimpleCalc_CharVariables, showEmpty=true };
     return ipairs( { system, global, character } )
@@ -234,11 +242,6 @@ function SimpleCalc:ApplyVariables( str )
 end
 
 function SimpleCalc:ApplyCurrencies( varTable )
-    for k, v in pairs( CURRENCY_IDS ) do
-        local _, currencyAmount = GetCurrencyInfo( v );
-        varTable[k] = currencyAmount;
-    end
-    return varTable;
 end
 
 function SimpleCalc:getAzeritePower()
@@ -255,7 +258,7 @@ function SimpleCalc:strVariableSub( str, k, v )
 end
 
 function SimpleCalc:Usage()
-    self:Message( 'SimpleCalc (v' .. scversion .. ') - Simple mathematical calculator' );
+    self:Message( addonName .. ' (v' .. scversion .. ') - Simple mathematical calculator' );
     self:Message( 'Usage: /calc <value> <symbol> <value>' );
     self:Message( 'Usage: /calc addvar <variable> = <value>' );
     self:Message( 'Example: 1650 + 2200 - honor' );
@@ -274,12 +277,12 @@ end
 
 -- Output errors
 function SimpleCalc:Error( message )
-    DEFAULT_CHAT_FRAME:AddMessage( '[SimpleCalc] ' .. message, 0.8, 0.2, 0.2 );
+    DEFAULT_CHAT_FRAME:AddMessage( '['.. addonName ..']: ' .. message, 0.8, 0.2, 0.2 );
 end
 
 -- Output messages
 function SimpleCalc:Message( message )
-    DEFAULT_CHAT_FRAME:AddMessage( '[SimpleCalc]: ' .. message, 0.5, 0.5, 1 );
+    DEFAULT_CHAT_FRAME:AddMessage( '['.. addonName ..']: ' .. message, 0.5, 0.5, 1 );
 end
 
 function SimpleCalc:EvalString( str )
@@ -293,10 +296,12 @@ end
 function SimpleCalc:sortTableForListing( t ) -- https://www.lua.org/pil/19.3.html
     local a = {};
     for n, v in pairs( t ) do
-        table.insert( a, n .. " = " .. v );
+        local exV = type(v) == "function" and v() or v
+        table.insert( a, n .. " = " .. exV );
     end
     table.sort( a );
     return a;
 end
 
-SimpleCalc:OnLoad();
+SimpleCalc:RegisterEvent("ADDON_LOADED")
+SimpleCalc:SetScript("OnEvent", SimpleCalc.OnEvent)
