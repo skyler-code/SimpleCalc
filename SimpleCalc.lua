@@ -63,6 +63,7 @@ function SimpleCalc:InitializeVariables()
         ap        = function() return select(1, self:getAzeritePower()) or 0 end,
         apmax     = function() return select(2, self:getAzeritePower()) or 0 end,
         apleft    = function() local tXP, nRC = self:getAzeritePower(); return nRC - tXP end,
+        ilvl      = function() return ("%.2f"):format(select(2, GetAverageItemLevel())) end,
         last      = function() return self.lastResult end
     }
 
