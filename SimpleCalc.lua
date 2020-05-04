@@ -3,7 +3,7 @@ local addonName = GetAddOnInfo("SimpleCalc")
 local SimpleCalc = CreateFrame( 'Frame', addonName, UIParent )
 local scversion = GetAddOnMetadata( addonName, 'Version' )
 
-
+local ITEM_LINK_STR_MATCH = "item[%-?%d:]+"
 local CURRENCY_IDS = {
     garrison  = 824,
     orderhall = 1220,
@@ -234,12 +234,47 @@ function SimpleCalc:ListVariables()
 end
 
 function SimpleCalc:ApplyVariables( str )
+    str = self:strItemCountSub(str)
     for _,varType in self:getVariableTables() do
         for k, v in pairs( varType['list'] ) do
             str = self:strVariableSub( str, k, v );
         end
     end
     return str;
+end
+
+function SimpleCalc:unescapeStr(str)
+    local escapes = {
+        "|c........", -- color start
+        "|r", -- color end
+        "|h",
+        "|H", -- links
+        "|T.-|t", -- textures
+        "{.-}", -- raid icons
+        "%b[]" -- stuff in brackets
+    }
+    for k, v in ipairs(escapes) do
+        str = str:gsub(v, "")
+    end
+    return str
+end
+
+function SimpleCalc:strItemCountSub(str)
+    local _, count = str:gsub(ITEM_LINK_STR_MATCH, '')
+    for i = 1, count do
+        local itemLink = str:match(ITEM_LINK_STR_MATCH)
+        if itemLink then
+            local itemCount = GetItemCount(itemLink, true)
+            str = str:gsub(itemLink, itemCount)
+        end
+    end
+    str = self:unescapeStr(str)
+    return str
+end
+
+function SimpleCalc:dumpMessage(msg)
+    UIParentLoadAddOn("Blizzard_DebugTools")
+    DevTools_DumpCommand('"' .. msg .. '"')
 end
 
 function SimpleCalc:getAzeritePower()
@@ -252,7 +287,7 @@ function SimpleCalc:getAzeritePower()
 end
 
 function SimpleCalc:strVariableSub( str, k, v )
-    return str:gsub( '%f[%a_]' .. k .. '%f[^%a_]', v );
+    return str:gsub( '%f[%a_]' .. k .. '%f[^%a_]', v )
 end
 
 function SimpleCalc:Usage()
