@@ -1,8 +1,8 @@
-## Interface: 11304
+## Interface: 11305
 ## Title: SimpleCalc
 ## Notes: A simple mathematical calculator. Type /calc for help!
 ## SavedVariables: calcVariables
 ## SavedVariablesPerCharacter: SimpleCalc_CharVariables, SimpleCalc_LastResult
 ## Author: skylerh15
-## Version: 1.4.0-classic
+## Version: 1.4.0a-classic
 SimpleCalc.lua

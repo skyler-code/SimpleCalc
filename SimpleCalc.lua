@@ -1,6 +1,6 @@
 -- Initialize SimpleCalc
-local addonName = GetAddOnInfo("SimpleCalc")
-local SimpleCalc = CreateFrame( 'Frame', addonName, UIParent )
+local addonName = ...
+local SimpleCalc = CreateFrame( 'Frame', addonName )
 local scversion = GetAddOnMetadata( addonName, 'Version' )
 
 
@@ -14,22 +14,16 @@ local PLAYER_STAT_IDS = {
 
 function SimpleCalc:OnLoad()
     -- Register our slash commands
-    SLASH_SIMPLECALC1 = '/simplecalc';
-    SLASH_SIMPLECALC2 = '/calc';
-    SlashCmdList['SIMPLECALC'] = function(...) self:ParseParameters(...); end
+    local slashCommands = { "simplecalc", "calc" }
+    for k, v in pairs(slashCommands) do
+        _G["SLASH_"..addonName:upper()..k] = "/" .. v
+    end
 
     -- Initialize our variables
-    if ( not SimpleCalc_CharVariables ) then
-        SimpleCalc_CharVariables = {};
-    end
-    if ( not calcVariables ) then
-        calcVariables = {};
-    end
-    if ( not SimpleCalc_LastResult ) then
-        self:setLastResult(0)
-    else
-        self:setLastResult(SimpleCalc_LastResult);
-    end
+    SimpleCalc_CharVariables = SimpleCalc_CharVariables or {}
+    calcVariables = calcVariables or {}
+    
+    self:setLastResult(SimpleCalc_LastResult or 0)
 
     self:InitializeVariables()
 
@@ -73,8 +67,8 @@ function SimpleCalc:ParseParameters( paramStr )
     local addVar, calcVariable, varIsGlobal, clearVar, clearGlobal, clearChar;
 
     if ( lowerParam == '' or lowerParam == 'help' ) then
-        self:Usage();
-        return;
+        self:Usage()
+        return
     end
 
     for param in lowerParam:gmatch( '[^%s]+' ) do -- This loops through the user input (stuff after /calc). We're going to be checking for arguments such as 'help' or 'addvar' and acting accordingly.
