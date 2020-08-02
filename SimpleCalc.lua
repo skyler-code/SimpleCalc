@@ -18,6 +18,7 @@ function SimpleCalc:OnLoad()
     for k, v in pairs(slashCommands) do
         _G["SLASH_"..addonName:upper()..k] = "/" .. v
     end
+    SlashCmdList[addonName:upper()] = function(...) self:ParseParameters(...) end
 
     -- Initialize our variables
     SimpleCalc_CharVariables = SimpleCalc_CharVariables or {}
