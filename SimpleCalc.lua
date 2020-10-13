@@ -1,5 +1,5 @@
 -- Initialize SimpleCalc
-local addonName = select(1, ...)
+local addonName = ...
 local SimpleCalc = CreateFrame( 'Frame', addonName )
 local scversion = GetAddOnMetadata( addonName, 'Version' )
 
@@ -63,7 +63,10 @@ function SimpleCalc:InitializeVariables()
     }
 
     for k, v in pairs( CURRENCY_IDS ) do
-        self.variables[k] = function() return select(2, GetCurrencyInfo( v )) or 0 end
+        self.variables[k] = function() 
+            local currencyInfo = C_CurrencyInfo.GetCurrencyInfo(v) or {}; 
+            return currencyInfo.quantity or 0 
+        end
     end
 
 end
