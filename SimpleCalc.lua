@@ -9,7 +9,11 @@ local CURRENCY_IDS = {
     orderhall = 1220,
     resources = 1560,
     oil       = 1101,
-    dubloon   = 1710
+    dubloon   = 1710,
+    stygia    = 1767,
+    anima     = 1813,
+    ash       = 1828,
+
 }
 
 function SimpleCalc:OnLoad()
@@ -55,9 +59,6 @@ function SimpleCalc:InitializeVariables()
         maxxp     = function() return UnitXPMax(p) end,
         xp        = function() return UnitXP(p) end,
         xpleft    = function() return UnitXPMax(p) - UnitXP(p) end,
-        ap        = function() return select(1, self:getAzeritePower()) or 0 end,
-        apmax     = function() return select(2, self:getAzeritePower()) or 0 end,
-        apleft    = function() local tXP, nRC = self:getAzeritePower(); return nRC - tXP end,
         ilvl      = function() return ("%.2f"):format(select(2, GetAverageItemLevel())) end,
         last      = function() return self.lastResult end
     }
