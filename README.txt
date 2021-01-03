@@ -25,6 +25,9 @@ A selection of in-game values has been added to make life easier when doing cert
 * resources - War resources (BfA)
 * maxxp - XP required to level
 * xp - Current XP
+* stygia - Maw resources (SL)
+* ash - Legendary resources (SL)
+* anima - Covenent resources (SL)
 
 For example:
 
