@@ -13,8 +13,85 @@ local CURRENCY_IDS = {
     stygia    = 1767,
     anima     = 1813,
     ash       = 1828,
-
 }
+
+-- Output errors
+local function Error( message )
+    DEFAULT_CHAT_FRAME:AddMessage( '['.. addonName ..']: ' .. message, 0.8, 0.2, 0.2 )
+end
+
+-- Output messages
+local function Message( message )
+    DEFAULT_CHAT_FRAME:AddMessage( '['.. addonName ..']: ' .. message, 0.5, 0.5, 1 )
+end
+
+local function UnescapeStr(str)
+    local escapes = {
+        "|c........", -- color start
+        "|r", -- color end
+        "|h",
+        "|H", -- links
+        "|T.-|t", -- textures
+        "{.-}", -- raid icons
+        "%b[]", -- stuff in brackets
+    }
+    for k, v in ipairs(escapes) do
+        str = str:gsub(v, "")
+    end
+    return str
+end
+
+local function StrItemCountSub(str)
+    local _, count = str:gsub(ITEM_LINK_STR_MATCH, '')
+    for i = 1, count do
+        local itemLink = str:match(ITEM_LINK_STR_MATCH)
+        if itemLink then
+            local itemCount = GetItemCount(itemLink, true)
+            str = str:gsub(itemLink, itemCount)
+        end
+    end
+    str = UnescapeStr(str)
+    return str
+end
+
+local function StrVariableSub( str, k, v )
+    return str:gsub( '%f[%a_]' .. k .. '%f[^%a_]', v )
+end
+
+local function Usage()
+    Message( addonName .. ' (v' .. scversion .. ') - Simple mathematical calculator' )
+    Message( 'Usage: /calc <value> <symbol> <value>' )
+    Message( 'Example: /calc 1650 + 2200 - honor' )
+    Message( 'value - A numeric or game value (honor, maxhonor, health, mana (or power), copper, silver, gold)' )
+    Message( 'symbol - A mathematical symbol (+, -, /, *)' )
+    Message( 'variable - A name to store a value under for future use' )
+    Message( 'Use /calc listvar to see your saved variables' )
+    Message( 'Use /calc clearvar <global(g) | char(c) | all> to clear your saved variables. Defaults to all.' )
+    Message( 'Use /calc addvar for info how to add variables' )
+end
+
+local function AddVarUsage()
+    Message( 'Usage: /calc addvar <global(g)|char(c)> <variable> = <value|variable|expression>' )
+    Message( 'Example: /calc addvar g mainGold = gold' )
+    Message( 'Note: Character variables are prioritized over global when evaluating expressions.' )
+end
+
+local function EvalString( str )
+    local strFunc = loadstring( 'return ' .. str )
+    if ( pcall( strFunc ) ) then
+        return strFunc()
+    end
+end
+
+local function SortTableForListing( t ) -- https://www.lua.org/pil/19.3.html
+    local a = {}
+    for n, v in pairs( t ) do
+        local exV = type(v) == "function" and v() or v
+        table.insert( a, n .. " = " .. exV )
+    end
+    table.sort( a )
+    return a
+end
 
 function SimpleCalc:OnLoad()
     -- Register our slash commands
@@ -30,10 +107,8 @@ function SimpleCalc:OnLoad()
     
     self:setLastResult(SimpleCalc_LastResult or 0)
 
-    self:InitializeVariables()
-
     -- Let the user know we're here
-    self:Message( 'v' .. scversion .. ' initiated! Type: /calc for help.' )
+    Message( 'v' .. scversion .. ' initiated! Type: /calc for help.' )
 end
 
 function SimpleCalc:OnEvent(event, eventAddon)
@@ -42,9 +117,9 @@ function SimpleCalc:OnEvent(event, eventAddon)
     end
 end
 
-function SimpleCalc:InitializeVariables()
+function SimpleCalc:GetVariables()
     local p = "player"
-    self.variables = {
+    local variables = {
         achieves  = function() return GetTotalAchievementPoints() end,
         maxhonor  = function() return UnitHonorMax(p) end,
         maxhonour = function() return UnitHonorMax(p) end,
@@ -60,16 +135,17 @@ function SimpleCalc:InitializeVariables()
         xp        = function() return UnitXP(p) end,
         xpleft    = function() return UnitXPMax(p) - UnitXP(p) end,
         ilvl      = function() return ("%.2f"):format(select(2, GetAverageItemLevel())) end,
-        last      = function() return self.lastResult end
+        last      = function() return self.lastResult end,
     }
 
     for k, v in pairs( CURRENCY_IDS ) do
-        self.variables[k] = function() 
-            local currencyInfo = C_CurrencyInfo.GetCurrencyInfo(v) or {}; 
-            return currencyInfo.quantity or 0 
+        variables[k] = function()
+            local currencyInfo = C_CurrencyInfo.GetCurrencyInfo(v) or {}
+            return currencyInfo.quantity or 0
         end
     end
 
+    return variables
 end
 
 -- Parse any user-passed parameters
@@ -78,9 +154,8 @@ function SimpleCalc:ParseParameters( paramStr )
     local i = 0
     local addVar, calcVariable, varIsGlobal, clearVar, clearGlobal, clearChar
 
-    if ( lowerParam == '' or lowerParam == 'help' ) then
-        self:Usage()
-        return
+    if lowerParam == '' or lowerParam == 'help' then
+        return Usage()
     end
 
     for param in lowerParam:gmatch( '[^%s]+' ) do -- This loops through the user input (stuff after /calc). We're going to be checking for arguments such as 'help' or 'addvar' and acting accordingly.
@@ -99,22 +174,22 @@ function SimpleCalc:ParseParameters( paramStr )
                 if ( param == 'global' or param == 'g' ) then
                     varIsGlobal = true
                 elseif ( param ~= 'char' and param ~= 'c' ) then
-                    self:Error( 'Invalid input: ' .. param )
-                    self:AddVarUsage()
+                    Error( 'Invalid input: ' .. param )
+                    AddVarUsage()
                     return
                 end
             elseif ( i == 2 ) then -- Should be variable name
                 if ( param:match( '[^a-z]' ) ) then
-                    self:Error( 'Invalid input: ' .. param )
-                    self:Error( 'Variable name can only contain letters!' )
+                    Error( 'Invalid input: ' .. param )
+                    Error( 'Variable name can only contain letters!' )
                     return
                 else
                     calcVariable = param
                 end
             elseif ( i == 3 ) then -- Should be '='
                 if ( param ~= '=' ) then
-                    self:Error( 'Invalid input: ' .. param )
-                    self:Error( 'You must use an equals sign!' )
+                    Error( 'Invalid input: ' .. param )
+                    Error( 'You must use an equals sign!' )
                     return
                 end
             elseif ( i == 4 ) then -- Should be number
@@ -122,10 +197,10 @@ function SimpleCalc:ParseParameters( paramStr )
                 if ( newParamStr:match( '[a-z]' ) ) then
                     newParamStr = self:ApplyVariables( newParamStr )
                 end
-                local evalParam = self:EvalString( newParamStr )
+                local evalParam = EvalString( newParamStr )
                 if ( not tonumber( evalParam ) ) then
-                    self:Error( 'Invalid input: ' .. param )
-                    self:Error( 'Variables can only be set to numbers or existing variables!' )
+                    Error( 'Invalid input: ' .. param )
+                    Error( 'Variables can only be set to numbers or existing variables!' )
                 else
                     local saveLocation, saveLocationStr = SimpleCalc_CharVariables, '[Character] '
                     if ( varIsGlobal ) then
@@ -133,10 +208,10 @@ function SimpleCalc:ParseParameters( paramStr )
                     end
                     if ( evalParam ~= 0 ) then
                         saveLocation[calcVariable] = evalParam
-                        self:Message( saveLocationStr .. 'set \'' .. calcVariable .. '\' to ' .. evalParam )
+                        Message( saveLocationStr .. 'set \'' .. calcVariable .. '\' to ' .. evalParam )
                     else -- Variables set to 0 are just wiped out
                         saveLocation[calcVariable] = nil
-                        self:Message( saveLocationStr .. 'Reset variable: ' .. calcVariable )
+                        Message( saveLocationStr .. 'Reset variable: ' .. calcVariable )
                     end
                 end
                 return
@@ -154,22 +229,22 @@ function SimpleCalc:ParseParameters( paramStr )
     end
 
     if ( addVar ) then -- User must have just typed /calc addvar so we'll give them a usage message.
-        self:AddVarUsage()
+        AddVarUsage()
         return
     end
 
     if ( clearVar ) then
         if ( clearGlobal ) then
             calcVariables = {}
-            self:Message( 'Global user variables cleared!' )
+            Message( 'Global user variables cleared!' )
         elseif ( clearChar ) then
             SimpleCalc_CharVariables = {}
-            self:Message( 'Character user variables cleared!' )
+            Message( 'Character user variables cleared!' )
         else
             calcVariables, SimpleCalc_CharVariables = {}, {}
-            self:Message( 'All user variables cleared!' )
+            Message( 'All user variables cleared!' )
         end
-        return;
+        return
     end
 
     local paramEval = lowerParam
@@ -184,20 +259,20 @@ function SimpleCalc:ParseParameters( paramStr )
     end
 
     if ( paramEval:match( '[a-z]' ) ) then
-        self:Error( 'Unrecognized variable!' )
-        self:Error( paramEval )
+        Error( 'Unrecognized variable!' )
+        Error( paramEval )
         return
     end
 
     paramEval = paramEval:gsub( '%s+', '' ) -- Clean up whitespace
-    local evalStr = self:EvalString( paramEval )
+    local evalStr = EvalString( paramEval )
 
     if ( evalStr ) then
-        self:Message( paramEval .. ' = ' .. evalStr )
+        Message( paramEval .. ' = ' .. evalStr )
         self:setLastResult(evalStr)
     else
-        self:Error( 'Could not evaluate expression! Maybe an unrecognized symbol?' )
-        self:Error( paramEval )
+        Error( 'Could not evaluate expression! Maybe an unrecognized symbol?' )
+        Error( paramEval )
     end
 end
 
@@ -207,7 +282,7 @@ function SimpleCalc:setLastResult(val)
 end
 
 function SimpleCalc:getVariableTables()
-    local system = { type='System', list=self.variables }
+    local system = { type='System', list=self:GetVariables() }
     local global = { type='Global', list=calcVariables, showEmpty=true }
     local character = { type='Character', list=SimpleCalc_CharVariables, showEmpty=true }
     return ipairs( { system, global, character } )
@@ -215,18 +290,18 @@ end
 
 function SimpleCalc:ListVariables()
     local function list( var )
-        local returnStr;
-        for _,k in ipairs( self:sortTableForListing( var['list'] ) ) do
-            if ( not returnStr ) then
-                returnStr = format( '%s variables: %s', var['type'], k )
-            else
+        local returnStr
+        for _,k in ipairs( SortTableForListing( var['list'] ) ) do
+            if returnStr then
                 returnStr = format( '%s, %s', returnStr, k )
+            else
+                returnStr = format( '%s variables: %s', var['type'], k )
             end
         end
-        if( var['showEmpty'] and not returnStr) then
+        if var['showEmpty'] and not returnStr then
             returnStr = format( 'There are no %s user variables.', var['type']:lower() )
         end
-        self:Message( returnStr )
+        Message( returnStr )
     end
     for _,varType in self:getVariableTables() do
         list( varType )
@@ -234,100 +309,13 @@ function SimpleCalc:ListVariables()
 end
 
 function SimpleCalc:ApplyVariables( str )
-    str = self:strItemCountSub(str)
+    str = StrItemCountSub(str)
     for _,varType in self:getVariableTables() do
         for k, v in pairs( varType['list'] ) do
-            str = self:strVariableSub( str, k, v )
+            str = StrVariableSub( str, k, v )
         end
     end
-    return str;
-end
-
-function SimpleCalc:unescapeStr(str)
-    local escapes = {
-        "|c........", -- color start
-        "|r", -- color end
-        "|h",
-        "|H", -- links
-        "|T.-|t", -- textures
-        "{.-}", -- raid icons
-        "%b[]" -- stuff in brackets
-    }
-    for k, v in ipairs(escapes) do
-        str = str:gsub(v, "")
-    end
     return str
-end
-
-function SimpleCalc:strItemCountSub(str)
-    local _, count = str:gsub(ITEM_LINK_STR_MATCH, '')
-    for i = 1, count do
-        local itemLink = str:match(ITEM_LINK_STR_MATCH)
-        if itemLink then
-            local itemCount = GetItemCount(itemLink, true)
-            str = str:gsub(itemLink, itemCount)
-        end
-    end
-    str = self:unescapeStr(str)
-    return str
-end
-
-function SimpleCalc:getAzeritePower()
-    if not C_AzeriteItem or not C_AzeriteItem.HasActiveAzeriteItem() then
-        return 0, 0
-    end
-
-    local azeriteItemLocation = C_AzeriteItem.FindActiveAzeriteItem()
-    return C_AzeriteItem.GetAzeriteItemXPInfo( azeriteItemLocation )
-end
-
-function SimpleCalc:strVariableSub( str, k, v )
-    return str:gsub( '%f[%a_]' .. k .. '%f[^%a_]', v )
-end
-
-function SimpleCalc:Usage()
-    self:Message( addonName .. ' (v' .. scversion .. ') - Simple mathematical calculator' )
-    self:Message( 'Usage: /calc <value> <symbol> <value>' )
-    self:Message( 'Usage: /calc addvar <variable> = <value>' )
-    self:Message( 'Example: 1650 + 2200 - honor' )
-    self:Message( 'value - A numeric or game value (honor, maxhonor, health, mana (or power), copper, silver, gold)' )
-    self:Message( 'symbol - A mathematical symbol (+, -, /, *)' )
-    self:Message( 'variable - A name to store a value under for future use' )
-    self:Message( 'Use /calc listvar to see' .. addonName .. '\'s and your saved variables' )
-    self:Message( 'Use /calc clearvar <global(g)|char(c)|all> to clear your saved variables. Defaults to all.' )
-end
-
-function SimpleCalc:AddVarUsage()
-    self:Message( 'Usage: /calc addvar <global(g)|char(c)> <variable> = <value|variable|expression>' )
-    self:Message( 'Example: /calc addvar g mainGold = gold' )
-    self:Message( 'Note: Character variables are prioritized over global when evaluating expressions.' )
-end
-
--- Output errors
-function SimpleCalc:Error( message )
-    DEFAULT_CHAT_FRAME:AddMessage( '['.. addonName ..']: ' .. message, 0.8, 0.2, 0.2 )
-end
-
--- Output messages
-function SimpleCalc:Message( message )
-    DEFAULT_CHAT_FRAME:AddMessage( '['.. addonName ..']: ' .. message, 0.5, 0.5, 1 )
-end
-
-function SimpleCalc:EvalString( str )
-    local strFunc = loadstring( 'return ' .. str )
-    if ( pcall( strFunc ) ) then
-        return strFunc()
-    end
-end
-
-function SimpleCalc:sortTableForListing( t ) -- https://www.lua.org/pil/19.3.html
-    local a = {}
-    for n, v in pairs( t ) do
-        local exV = type(v) == "function" and v() or v
-        table.insert( a, n .. " = " .. exV )
-    end
-    table.sort( a )
-    return a
 end
 
 SimpleCalc:RegisterEvent("ADDON_LOADED")
