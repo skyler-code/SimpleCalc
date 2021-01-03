@@ -35,7 +35,7 @@ local function UnescapeStr(str)
         "{.-}", -- raid icons
         "%b[]", -- stuff in brackets
     }
-    for k, v in ipairs(escapes) do
+    for _, v in pairs(escapes) do
         str = str:gsub(v, "")
     end
     return str
@@ -133,7 +133,7 @@ function SimpleCalc:GetVariables()
         gold      = function() return GetMoney() / 10000 end,
         maxxp     = function() return UnitXPMax(p) end,
         xp        = function() return UnitXP(p) end,
-        xpleft    = function() return UnitXPMax(p) - UnitXP(p) end,
+        xpleft    = function() if UnitLevel(p) == GetMaxLevelForPlayerExpansion() then return 0 end return UnitXPMax(p) - UnitXP(p) end,
         ilvl      = function() return ("%.2f"):format(select(2, GetAverageItemLevel())) end,
         last      = function() return self.lastResult end,
     }
@@ -285,21 +285,21 @@ function SimpleCalc:getVariableTables()
     local system = { type='System', list=self:GetVariables() }
     local global = { type='Global', list=calcVariables, showEmpty=true }
     local character = { type='Character', list=SimpleCalc_CharVariables, showEmpty=true }
-    return ipairs( { system, global, character } )
+    return pairs( { system, global, character } )
 end
 
 function SimpleCalc:ListVariables()
     local function list( var )
         local returnStr
-        for _,k in ipairs( SortTableForListing( var['list'] ) ) do
+        for _,v in pairs( SortTableForListing( var.list ) ) do
             if returnStr then
-                returnStr = format( '%s, %s', returnStr, k )
+                returnStr = format( '%s, %s', returnStr, v )
             else
-                returnStr = format( '%s variables: %s', var['type'], k )
+                returnStr = format( '%s variables: %s', var.type, v)
             end
         end
         if var['showEmpty'] and not returnStr then
-            returnStr = format( 'There are no %s user variables.', var['type']:lower() )
+            returnStr = format( 'There are no %s user variables.', var.type:lower() )
         end
         Message( returnStr )
     end
@@ -311,7 +311,7 @@ end
 function SimpleCalc:ApplyVariables( str )
     str = StrItemCountSub(str)
     for _,varType in self:getVariableTables() do
-        for k, v in pairs( varType['list'] ) do
+        for k, v in pairs( varType.list ) do
             str = StrVariableSub( str, k, v )
         end
     end
