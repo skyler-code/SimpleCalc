@@ -105,7 +105,7 @@ function SimpleCalc:OnLoad()
     SimpleCalc_CharVariables = SimpleCalc_CharVariables or {}
     calcVariables = calcVariables or {}
     
-    self:setLastResult(SimpleCalc_LastResult or 0)
+    SimpleCalc_LastResult = SimpleCalc_LastResult or 0
 
     -- Let the user know we're here
     Message( 'v' .. scversion .. ' initiated! Type: /calc for help.' )
@@ -135,7 +135,7 @@ function SimpleCalc:GetVariables()
         xp        = function() return UnitXP(p) end,
         xpleft    = function() if UnitLevel(p) == GetMaxLevelForPlayerExpansion() then return 0 end return UnitXPMax(p) - UnitXP(p) end,
         ilvl      = function() return ("%.2f"):format(select(2, GetAverageItemLevel())) end,
-        last      = function() return self.lastResult end,
+        last      = function() return SimpleCalc_LastResult end,
     }
 
     for k, v in pairs( CURRENCY_IDS ) do
@@ -250,8 +250,8 @@ function SimpleCalc:ParseParameters( paramStr )
     local paramEval = lowerParam
 
     if ( paramEval:match( '^[%%%+%-%*%^%/]' ) ) then
-        paramEval = format( '%s%s', self.lastResult, paramEval )
-        paramStr = format( '%s%s', self.lastResult, paramStr )
+        paramEval = format( '%s%s', SimpleCalc_LastResult, paramEval )
+        paramStr = format( '%s%s', SimpleCalc_LastResult, paramStr )
     end
 
     if ( paramEval:match( '[a-z]' ) ) then
@@ -269,16 +269,11 @@ function SimpleCalc:ParseParameters( paramStr )
 
     if ( evalStr ) then
         Message( paramEval .. ' = ' .. evalStr )
-        self:setLastResult(evalStr)
+        SimpleCalc_LastResult = evalStr
     else
         Error( 'Could not evaluate expression! Maybe an unrecognized symbol?' )
         Error( paramEval )
     end
-end
-
-function SimpleCalc:setLastResult(val)
-    SimpleCalc_LastResult = val
-    self.lastResult = val
 end
 
 function SimpleCalc:getVariableTables()
