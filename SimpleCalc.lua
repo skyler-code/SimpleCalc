@@ -95,7 +95,7 @@ end
 
 function SimpleCalc:OnLoad()
     -- Register our slash commands
-    local slashCommands = { "simplecalc", "calc" }
+    local slashCommands = { addonName:lower(), "calc" }
     for k, v in pairs(slashCommands) do
         _G["SLASH_"..addonName:upper()..k] = "/" .. v
     end
