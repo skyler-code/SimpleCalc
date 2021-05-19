@@ -4,6 +4,8 @@ local SimpleCalc = CreateFrame( 'Frame', addonName )
 local scversion = GetAddOnMetadata( addonName, 'Version' )
 
 
+local ITEM_LINK_STR_MATCH = "item[%-?%d:]+"
+
 local PLAYER_STAT_IDS = {
     strength = 1,
     agility = 2,
@@ -14,7 +16,7 @@ local PLAYER_STAT_IDS = {
 
 function SimpleCalc:OnLoad()
     -- Register our slash commands
-    local slashCommands = { "simplecalc", "calc" }
+    local slashCommands = { addonName:lower(), "calc" }
     for k, v in pairs(slashCommands) do
         _G["SLASH_"..addonName:upper()..k] = "/" .. v
     end
@@ -122,41 +124,41 @@ function SimpleCalc:ParseParameters( paramStr )
                     end
                     if ( evalParam ~= 0 ) then
                         saveLocation[calcVariable] = evalParam;
-                        self:Message( saveLocationStr .. 'set \'' .. calcVariable .. '\' to ' .. evalParam );
+                        self:Message( saveLocationStr .. 'set \'' .. calcVariable .. '\' to ' .. evalParam )
                     else -- Variables set to 0 are just wiped out
-                        saveLocation[calcVariable] = nil;
-                        self:Message( saveLocationStr .. 'Reset variable: ' .. calcVariable );
+                        saveLocation[calcVariable] = nil
+                        self:Message( saveLocationStr .. 'Reset variable: ' .. calcVariable )
                     end
                 end
-                return;
+                return
             end
         elseif ( clearVar ) then
             if ( i == 1 ) then
                 if ( param == 'global' or param == 'g' ) then
-                    clearGlobal = true;
+                    clearGlobal = true
                 elseif ( param == 'char' or param == 'c' ) then
-                    clearChar = true;
+                    clearChar = true
                 end
             end
         end
-        i = i + 1;
+        i = i + 1
     end
 
     if ( addVar ) then -- User must have just typed /calc addvar so we'll give them a usage message.
-        self:AddVarUsage();
-        return;
+        self:AddVarUsage()
+        return
     end
 
     if ( clearVar ) then
         if ( clearGlobal ) then
-            calcVariables = {};
+            calcVariables = {}
             self:Message( 'Global user variables cleared!' );
         elseif ( clearChar ) then
-            SimpleCalc_CharVariables = {};
+            SimpleCalc_CharVariables = {}
             self:Message( 'Character user variables cleared!' );
         else
-            calcVariables, SimpleCalc_CharVariables = {}, {};
-            self:Message( 'All user variables cleared!' );
+            calcVariables, SimpleCalc_CharVariables = {}, {}
+            self:Message( 'All user variables cleared!' )
         end
         return;
     end
@@ -164,18 +166,18 @@ function SimpleCalc:ParseParameters( paramStr )
     local paramEval = lowerParam;
 
     if ( paramEval:match( '^[%%%+%-%*%^%/]' ) ) then
-        paramEval = format( '%s%s', self.lastResult, paramEval );
-        paramStr = format( '%s%s', self.lastResult, paramStr );
+        paramEval = format( '%s%s', self.lastResult, paramEval )
+        paramStr = format( '%s%s', self.lastResult, paramStr )
     end
 
     if ( paramEval:match( '[a-z]' ) ) then
-        paramEval = self:ApplyVariables( paramEval );
+        paramEval = self:ApplyVariables( paramEval )
     end
 
     if ( paramEval:match( '[a-z]' ) ) then
-        self:Error( 'Unrecognized variable!' );
-        self:Error( paramEval );
-        return;
+        self:Error( 'Unrecognized variable!' )
+        self:Error( paramEval )
+        return
     end
 
     paramEval = paramEval:gsub( '%s+', '' ); -- Clean up whitespace
@@ -199,13 +201,13 @@ function SimpleCalc:getVariableTables()
     local system = { type='System', list=self.variables };
     local global = { type='Global', list=calcVariables, showEmpty=true };
     local character = { type='Character', list=SimpleCalc_CharVariables, showEmpty=true };
-    return ipairs( { system, global, character } )
+    return pairs( { system, global, character } )
 end
 
 function SimpleCalc:ListVariables()
     local function list( var )
         local returnStr;
-        for _,k in ipairs( self:sortTableForListing( var['list'] ) ) do
+        for _,k in pairs( self:sortTableForListing( var['list'] ) ) do
             if ( not returnStr ) then
                 returnStr = format( '%s variables: %s', var['type'], k );
             else
@@ -223,25 +225,46 @@ function SimpleCalc:ListVariables()
 end
 
 function SimpleCalc:ApplyVariables( str )
+    str = self:strItemCountSub(str)
     for _,varType in self:getVariableTables() do
         for k, v in pairs( varType['list'] ) do
-            str = self:strVariableSub( str, k, v );
+            str = self:strVariableSub( str, k, v )
         end
     end
-    return str;
-end
-
-function SimpleCalc:getAzeritePower()
-    if not C_AzeriteItem or not C_AzeriteItem.HasActiveAzeriteItem() then
-        return 0, 0;
-    end
-
-    local azeriteItemLocation = C_AzeriteItem.FindActiveAzeriteItem();
-    return C_AzeriteItem.GetAzeriteItemXPInfo( azeriteItemLocation );
+    return str
 end
 
 function SimpleCalc:strVariableSub( str, k, v )
-    return str:gsub( '%f[%a_]' .. k .. '%f[^%a_]', v );
+    return str:gsub( '%f[%a_]' .. k .. '%f[^%a_]', v )
+end
+
+function SimpleCalc:unescapeStr(str)
+    local escapes = {
+        "|c........", -- color start
+        "|r", -- color end
+        "|h",
+        "|H", -- links
+        "|T.-|t", -- textures
+        "{.-}", -- raid icons
+        "%b[]" -- stuff in brackets
+    }
+    for k, v in pairs(escapes) do
+        str = str:gsub(v, "")
+    end
+    return str
+end
+
+function SimpleCalc:strItemCountSub(str)
+    local _, count = str:gsub(ITEM_LINK_STR_MATCH, '')
+    for i = 1, count do
+        local itemLink = str:match(ITEM_LINK_STR_MATCH)
+        if itemLink then
+            local itemCount = GetItemCount(itemLink, true)
+            str = str:gsub(itemLink, itemCount)
+        end
+    end
+    str = self:unescapeStr(str)
+    return str
 end
 
 function SimpleCalc:Usage()
