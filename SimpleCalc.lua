@@ -6,14 +6,6 @@ local scversion = GetAddOnMetadata( addonName, 'Version' )
 
 local ITEM_LINK_STR_MATCH = "item[%-?%d:]+"
 
-local PLAYER_STAT_IDS = {
-    strength = 1,
-    agility = 2,
-    stamina = 3,
-    intellect = 4,
-    spirit = 5
-}
-
 function SimpleCalc:OnLoad()
     -- Register our slash commands
     local slashCommands = { addonName:lower(), "calc" }
@@ -54,6 +46,8 @@ function SimpleCalc:InitializeVariables()
         maxxp     = function() return UnitXPMax(p) end,
         xp        = function() return UnitXP(p) end,
         xpleft    = function() return UnitXPMax(p) - UnitXP(p) end,
+        honor     = function() return C_CurrencyInfo.GetCurrencyInfo(Constants.CurrencyConsts.CLASSIC_HONOR_CURRENCY_ID).quantity end,
+        arena     = function() return C_CurrencyInfo.GetCurrencyInfo(Constants.CurrencyConsts.CLASSIC_ARENA_POINTS_CURRENCY_ID).quantity end,
         last      = function() return self.lastResult end
     }
 
