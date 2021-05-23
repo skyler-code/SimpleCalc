@@ -51,8 +51,8 @@ function SimpleCalc:InitializeVariables()
         last      = function() return self.lastResult end
     }
 
-    for k, v in pairs( PLAYER_STAT_IDS ) do
-        self.variables[k] = function() return select(2, UnitStat(p, v)) or 0 end
+    for i = 1, 5 do
+        self.variables[string.lower(_G["SPELL_STAT"..i.."_NAME"])] = function() return select(2, UnitStat(p, i)) or 0 end
     end
 
 end
