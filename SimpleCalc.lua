@@ -4,16 +4,6 @@ local SimpleCalc = CreateFrame( 'Frame', addonName )
 local scversion = GetAddOnMetadata( addonName, 'Version' )
 
 local ITEM_LINK_STR_MATCH = "item[%-?%d:]+"
-local CURRENCY_IDS = {
-    garrison  = 824,
-    orderhall = 1220,
-    resources = 1560,
-    oil       = 1101,
-    dubloon   = 1710,
-    stygia    = 1767,
-    anima     = 1813,
-    ash       = 1828,
-}
 
 -- Output errors
 local function Error( message )
@@ -93,6 +83,18 @@ local function SortTableForListing( t ) -- https://www.lua.org/pil/19.3.html
     return a
 end
 
+local isRetail = WOW_PROJECT_ID == WOW_PROJECT_MAINLINE
+
+local function GetMaxLevel()
+    if GetMaxLevelForPlayerExpansion then
+        return GetMaxLevelForPlayerExpansion()
+    end
+    if MAX_PLAYER_LEVEL_TABLE and GetAccountExpansionLevel then
+        return MAX_PLAYER_LEVEL_TABLE[GetAccountExpansionLevel()]
+    end
+    return 60
+end
+
 function SimpleCalc:OnLoad()
     -- Register our slash commands
     local slashCommands = { addonName:lower(), "calc" }
@@ -120,28 +122,53 @@ end
 function SimpleCalc:GetVariables()
     local p = "player"
     local variables = {
-        achieves  = function() return GetTotalAchievementPoints() end,
-        maxhonor  = function() return UnitHonorMax(p) end,
-        maxhonour = function() return UnitHonorMax(p) end,
-        honorLeft = function() return UnitHonorMax(p) - UnitHonor(p) end,
-        health    = function() return UnitHealthMax(p) end,
+        armor     = function() return select(3, UnitArmor(p)) end,
         hp        = function() return UnitHealthMax(p) end,
         power     = function() return UnitPowerMax(p) end,
-        mana      = function() return UnitPowerMax(p) end,
         copper    = function() return GetMoney() end,
         silver    = function() return GetMoney() / 100 end,
         gold      = function() return GetMoney() / 10000 end,
         maxxp     = function() return UnitXPMax(p) end,
         xp        = function() return UnitXP(p) end,
-        xpleft    = function() if UnitLevel(p) == GetMaxLevelForPlayerExpansion() then return 0 end return UnitXPMax(p) - UnitXP(p) end,
-        ilvl      = function() return ("%.2f"):format(select(2, GetAverageItemLevel())) end,
+        xpleft    = function() if UnitLevel(p) == GetMaxLevel() then return 0 end return UnitXPMax(p) - UnitXP(p) end,
         last      = function() return SimpleCalc_LastResult end,
     }
+    variables.health = variables.hp
+    variables.mana = variables.power
 
-    for k, v in pairs( CURRENCY_IDS ) do
-        variables[k] = function()
-            local currencyInfo = C_CurrencyInfo.GetCurrencyInfo(v) or {}
-            return currencyInfo.quantity or 0
+    if isRetail then
+        local CURRENCY_IDS = {
+            garrison  = 824,
+            orderhall = 1220,
+            resources = 1560,
+            oil       = 1101,
+            dubloon   = 1710,
+            stygia    = 1767,
+            anima     = Constants.CurrencyConsts.CURRENCY_ID_RESERVOIR_ANIMA,
+            ash       = 1828, 
+            honor     = Constants.CurrencyConsts.HONOR_CURRENCY_ID,
+            conquest  = Constants.CurrencyConsts.CONQUEST_CURRENCY_ID,
+        }
+        for k, v in pairs( CURRENCY_IDS ) do
+            variables[k] = function()
+                local currencyInfo = C_CurrencyInfo.GetCurrencyInfo(v) or {}
+                return currencyInfo.quantity or 0
+            end
+        end
+        variables.achieves = GetTotalAchievementPoints
+        variables.ilvl = function() return ("%.2f"):format(select(2, GetAverageItemLevel())) end
+        for k,v in pairs({CURRENCY_IDS.conquest, CURRENCY_IDS.honor}) do
+            local pvpInfo = C_CurrencyInfo.GetCurrencyInfo(v) or {}
+            local pvpName = string.lower(pvpInfo.name or "")
+            variables['max'..pvpName] = function() return C_CurrencyInfo.GetCurrencyInfo(v).maxQuantity end
+            variables[pvpName..'left'] = function()
+                local pInfo = C_CurrencyInfo.GetCurrencyInfo(v)
+                return pInfo.maxQuantity - pInfo.quantity
+            end
+        end
+    else
+        for i = 1, 5 do
+            variables[string.lower(_G["SPELL_STAT"..i.."_NAME"])] = function() return select(2, UnitStat(p, i)) or 0 end
         end
     end
 

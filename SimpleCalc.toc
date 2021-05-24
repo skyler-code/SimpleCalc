@@ -4,5 +4,5 @@
 ## SavedVariables: calcVariables
 ## SavedVariablesPerCharacter: SimpleCalc_CharVariables, SimpleCalc_LastResult
 ## Author: skylerh15
-## Version: 1.6
+## Version: 1.7
 SimpleCalc.lua
