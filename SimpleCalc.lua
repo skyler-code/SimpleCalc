@@ -89,8 +89,8 @@ local function GetMaxLevel()
     if GetMaxLevelForPlayerExpansion then
         return GetMaxLevelForPlayerExpansion()
     end
-    if MAX_PLAYER_LEVEL_TABLE and GetAccountExpansionLevel then
-        return MAX_PLAYER_LEVEL_TABLE[GetAccountExpansionLevel()]
+    if MAX_PLAYER_LEVEL_TABLE and GetServerExpansionLevel then
+        return MAX_PLAYER_LEVEL_TABLE[GetServerExpansionLevel()]
     end
     return 60
 end
