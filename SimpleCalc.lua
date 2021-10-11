@@ -3,6 +3,10 @@ local addonName = ...
 local SimpleCalc = CreateFrame( 'Frame', addonName )
 local scversion = GetAddOnMetadata( addonName, 'Version' )
 
+local tinsert, tsort, pairs = table.insert, table.sort, pairs
+
+local isRetail = WOW_PROJECT_ID == WOW_PROJECT_MAINLINE
+
 local ITEM_LINK_STR_MATCH = "item[%-?%d:]+"
 
 -- Output errors
@@ -40,8 +44,7 @@ local function StrItemCountSub(str)
             str = str:gsub(itemLink, itemCount)
         end
     end
-    str = UnescapeStr(str)
-    return str
+    return UnescapeStr(str)
 end
 
 local function StrVariableSub( str, k, v )
@@ -77,13 +80,11 @@ local function SortTableForListing( t ) -- https://www.lua.org/pil/19.3.html
     local a = {}
     for n, v in pairs( t ) do
         local exV = type(v) == "function" and v() or v
-        table.insert( a, n .. " = " .. exV )
+        tinsert( a, n .. " = " .. exV )
     end
-    table.sort( a )
+    tsort( a )
     return a
 end
-
-local isRetail = WOW_PROJECT_ID == WOW_PROJECT_MAINLINE
 
 local function GetMaxLevel()
     if GetMaxLevelForPlayerExpansion then
@@ -122,7 +123,8 @@ end
 
 function SimpleCalc:GetVariables()
     local p = "player"
-    local variables = {
+    if self.variables then return self.variables end
+    self.variables = {
         armor     = function() return select(3, UnitArmor(p)) end,
         hp        = function() return UnitHealthMax(p) end,
         power     = function() return UnitPowerMax(p) end,
@@ -134,14 +136,14 @@ function SimpleCalc:GetVariables()
         xpleft    = function() if UnitLevel(p) == GetMaxLevel() then return 0 end return UnitXPMax(p) - UnitXP(p) end,
         last      = function() return SimpleCalc_LastResult end,
     }
-    variables.health = variables.hp
-    variables.mana = variables.power
+    self.variables.health = self.variables.hp
+    self.variables.mana = self.variables.power
 
     if isRetail then
         local CURRENCY_IDS = {
             garrison  = 824,
             orderhall = 1220,
-            resources = 1560,
+            resources = Constants.CurrencyConsts.WAR_RESOURCES_CURRENCY_ID,
             oil       = 1101,
             dubloon   = 1710,
             stygia    = 1767,
@@ -151,29 +153,29 @@ function SimpleCalc:GetVariables()
             conquest  = Constants.CurrencyConsts.CONQUEST_CURRENCY_ID,
         }
         for k, v in pairs( CURRENCY_IDS ) do
-            variables[k] = function()
+            self.variables[k] = function()
                 local currencyInfo = C_CurrencyInfo.GetCurrencyInfo(v) or {}
                 return currencyInfo.quantity or 0
             end
         end
-        variables.achieves = GetTotalAchievementPoints
-        variables.ilvl = function() return ("%.2f"):format(select(2, GetAverageItemLevel())) end
+        self.variables.achieves = GetTotalAchievementPoints
+        self.variables.ilvl = function() return ("%.2f"):format(select(2, GetAverageItemLevel())) end
         for k,v in pairs({CURRENCY_IDS.conquest, CURRENCY_IDS.honor}) do
             local pvpInfo = C_CurrencyInfo.GetCurrencyInfo(v) or {}
             local pvpName = string.lower(pvpInfo.name or "")
-            variables['max'..pvpName] = function() return C_CurrencyInfo.GetCurrencyInfo(v).maxQuantity end
-            variables[pvpName..'left'] = function()
+            self.variables['max'..pvpName] = function() return C_CurrencyInfo.GetCurrencyInfo(v).maxQuantity end
+            self.variables[pvpName..'left'] = function()
                 local pInfo = C_CurrencyInfo.GetCurrencyInfo(v)
                 return pInfo.maxQuantity - pInfo.quantity
             end
         end
     else
         for i = 1, 5 do
-            variables[string.lower(_G["SPELL_STAT"..i.."_NAME"])] = function() return select(2, UnitStat(p, i)) or 0 end
+            self.variables[string.lower(_G["SPELL_STAT"..i.."_NAME"])] = function() return select(2, UnitStat(p, i)) or 0 end
         end
     end
 
-    return variables
+    return self.variables
 end
 
 -- Parse any user-passed parameters
