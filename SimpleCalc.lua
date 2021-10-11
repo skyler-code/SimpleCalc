@@ -116,6 +116,7 @@ end
 function SimpleCalc:OnEvent(event, eventAddon)
     if event == "ADDON_LOADED" and eventAddon == addonName then
         self:OnLoad()
+        self:UnregisterEvent("ADDON_LOADED")
     end
 end
 
@@ -341,4 +342,4 @@ function SimpleCalc:ApplyVariables( str )
 end
 
 SimpleCalc:RegisterEvent("ADDON_LOADED")
-SimpleCalc:SetScript("OnEvent", SimpleCalc.OnEvent)
+SimpleCalc:SetScript("OnEvent", function(self, ...) self:OnEvent(...) end)
