@@ -187,54 +187,54 @@ function SimpleCalc:ParseParameters( paramStr )
     end
 
     for param in lowerParam:gmatch( '[^%s]+' ) do -- This loops through the user input (stuff after /calc). We're going to be checking for arguments such as 'help' or 'addvar' and acting accordingly.
-        if ( i == 0 ) then
-            if ( param == 'addvar' ) then
+        if i == 0 then
+            if param == 'addvar' then
                 addVar = true
-            elseif ( param == 'listvar' ) then
+            elseif param == 'listvar' then
                 self:ListVariables()
                 return
-            elseif ( param == 'clearvar' ) then
+            elseif param == 'clearvar' then
                 clearVar = true
             end
         end
-        if ( addVar ) then -- User entered addvar so let's loop through the rest of the params.
-            if ( i == 1 ) then
-                if ( param == 'global' or param == 'g' ) then
+        if addVar then -- User entered addvar so let's loop through the rest of the params.
+            if i == 1 then
+                if param == 'global' or param == 'g' then
                     varIsGlobal = true
-                elseif ( param ~= 'char' and param ~= 'c' ) then
+                elseif param ~= 'char' and param ~= 'c' then
                     Error( 'Invalid input: ' .. param )
                     AddVarUsage()
                     return
                 end
-            elseif ( i == 2 ) then -- Should be variable name
-                if ( param:match( '[^a-z]' ) ) then
+            elseif i == 2 then -- Should be variable name
+                if param:match( '[^a-z]' ) then
                     Error( 'Invalid input: ' .. param )
                     Error( 'Variable name can only contain letters!' )
                     return
                 else
                     calcVariable = param
                 end
-            elseif ( i == 3 ) then -- Should be '='
-                if ( param ~= '=' ) then
+            elseif i == 3 then -- Should be '='
+                if param ~= '=' then
                     Error( 'Invalid input: ' .. param )
                     Error( 'You must use an equals sign!' )
                     return
                 end
-            elseif ( i == 4 ) then -- Should be number
+            elseif i == 4 then -- Should be number
                 local newParamStr = param
-                if ( newParamStr:match( '[a-z]' ) ) then
+                if newParamStr:match( '[a-z]' ) then
                     newParamStr = self:ApplyVariables( newParamStr )
                 end
                 local evalParam = EvalString( newParamStr )
-                if ( not tonumber( evalParam ) ) then
+                if not tonumber( evalParam ) then
                     Error( 'Invalid input: ' .. param )
                     Error( 'Variables can only be set to numbers or existing variables!' )
                 else
                     local saveLocation, saveLocationStr = SimpleCalc_CharVariables, '[Character] '
-                    if ( varIsGlobal ) then
+                    if varIsGlobal then
                         saveLocation, saveLocationStr = calcVariables, '[Global] '
                     end
-                    if ( evalParam ~= 0 ) then
+                    if evalParam ~= 0 then
                         saveLocation[calcVariable] = evalParam
                         Message( saveLocationStr .. 'set \'' .. calcVariable .. '\' to ' .. evalParam )
                     else -- Variables set to 0 are just wiped out
@@ -244,11 +244,11 @@ function SimpleCalc:ParseParameters( paramStr )
                 end
                 return
             end
-        elseif ( clearVar ) then
-            if ( i == 1 ) then
-                if ( param == 'global' or param == 'g' ) then
+        elseif clearVar then
+            if i == 1 then
+                if param == 'global' or param == 'g' then
                     clearGlobal = true
-                elseif ( param == 'char' or param == 'c' ) then
+                elseif param == 'char' or param == 'c' then
                     clearChar = true
                 end
             end
@@ -256,16 +256,16 @@ function SimpleCalc:ParseParameters( paramStr )
         i = i + 1
     end
 
-    if ( addVar ) then -- User must have just typed /calc addvar so we'll give them a usage message.
+    if addVar then -- User must have just typed /calc addvar so we'll give them a usage message.
         AddVarUsage()
         return
     end
 
-    if ( clearVar ) then
-        if ( clearGlobal ) then
+    if clearVar then
+        if clearGlobal then
             calcVariables = {}
             Message( 'Global user variables cleared!' )
-        elseif ( clearChar ) then
+        elseif clearChar then
             SimpleCalc_CharVariables = {}
             Message( 'Character user variables cleared!' )
         else
@@ -277,16 +277,16 @@ function SimpleCalc:ParseParameters( paramStr )
 
     local paramEval = lowerParam
 
-    if ( paramEval:match( '^[%%%+%-%*%^%/]' ) ) then
+    if paramEval:match( '^[%%%+%-%*%^%/]' ) then
         paramEval = format( '%s%s', SimpleCalc_LastResult, paramEval )
         paramStr = format( '%s%s', SimpleCalc_LastResult, paramStr )
     end
 
-    if ( paramEval:match( '[a-z]' ) ) then
+    if paramEval:match( '[a-z]' ) then
         paramEval = self:ApplyVariables( paramEval )
     end
 
-    if ( paramEval:match( '[a-z]' ) ) then
+    if paramEval:match( '[a-z]' ) then
         Error( 'Unrecognized variable!' )
         Error( paramEval )
         return
@@ -295,7 +295,7 @@ function SimpleCalc:ParseParameters( paramStr )
     paramEval = paramEval:gsub( '%s+', '' ) -- Clean up whitespace
     local evalStr = EvalString( paramEval )
 
-    if ( evalStr ) then
+    if evalStr then
         Message( paramEval .. ' = ' .. evalStr )
         SimpleCalc_LastResult = evalStr
     else
