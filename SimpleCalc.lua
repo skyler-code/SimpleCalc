@@ -3,20 +3,15 @@ local addonName = ...
 local SimpleCalc = CreateFrame( 'Frame', addonName )
 local scversion = GetAddOnMetadata( addonName, 'Version' )
 
-local tinsert, tsort, pairs = table.insert, table.sort, pairs
+local tinsert, tsort, pairs = tinsert, table.sort, pairs
 
 local isRetail = WOW_PROJECT_ID == WOW_PROJECT_MAINLINE
 
 local ITEM_LINK_STR_MATCH = "item[%-?%d:]+"
 
--- Output errors
-local function Error( message )
-    DEFAULT_CHAT_FRAME:AddMessage( '['.. addonName ..']: ' .. message, 0.8, 0.2, 0.2 )
-end
-
--- Output messages
-local function Message( message )
-    DEFAULT_CHAT_FRAME:AddMessage( '['.. addonName ..']: ' .. message, 0.5, 0.5, 1 )
+local gprint = print
+local function print(...)
+    gprint("|cff33ff99["..addonName.."]|r:",...)
 end
 
 local function UnescapeStr(str)
@@ -52,21 +47,21 @@ local function StrVariableSub( str, k, v )
 end
 
 local function Usage()
-    Message( addonName .. ' (v' .. scversion .. ') - Simple mathematical calculator' )
-    Message( 'Usage: /calc <value> <symbol> <value>' )
-    Message( 'Example: /calc 1650 + 2200 - honor' )
-    Message( 'value - A numeric or game value (honor, maxhonor, health, mana (or power), copper, silver, gold)' )
-    Message( 'symbol - A mathematical symbol (+, -, /, *)' )
-    Message( 'variable - A name to store a value under for future use' )
-    Message( 'Use /calc listvar to see your saved variables' )
-    Message( 'Use /calc clearvar <global(g) | char(c) | all> to clear your saved variables. Defaults to all.' )
-    Message( 'Use /calc addvar for info how to add variables' )
+    print( addonName .. ' (v' .. scversion .. ') - Simple mathematical calculator' )
+    print( 'Usage: /calc <value> <symbol> <value>' )
+    print( 'Example: /calc 1650 + 2200 - honor' )
+    print( 'value - A numeric or game value (honor, maxhonor, health, mana (or power), copper, silver, gold)' )
+    print( 'symbol - A mathematical symbol (+, -, /, *)' )
+    print( 'variable - A name to store a value under for future use' )
+    print( 'Use /calc listvar to see your saved variables' )
+    print( 'Use /calc clearvar <global(g) | char(c) | all> to clear your saved variables. Defaults to all.' )
+    print( 'Use /calc addvar for info how to add variables' )
 end
 
 local function AddVarUsage()
-    Message( 'Usage: /calc addvar <global(g)|char(c)> <variable> = <value|variable|expression>' )
-    Message( 'Example: /calc addvar g mainGold = gold' )
-    Message( 'Note: Character variables are prioritized over global when evaluating expressions.' )
+    print( 'Usage: /calc addvar <global(g)|char(c)> <variable> = <value|variable|expression>' )
+    print( 'Example: /calc addvar g mainGold = gold' )
+    print( 'Note: Character variables are prioritized over global when evaluating expressions.' )
 end
 
 local function EvalString( str )
@@ -85,6 +80,93 @@ local function SortTableForListing( t ) -- https://www.lua.org/pil/19.3.html
     tsort( a )
     return a
 end
+
+-- From AceConsole-3.0.lua
+
+local function nils(n, ...)
+	if n>1 then
+		return nil, nils(n-1, ...)
+	elseif n==1 then
+		return nil, ...
+	else
+		return ...
+	end
+end
+
+--- Retreive one or more space-separated arguments from a string.
+-- Treats quoted strings and itemlinks as non-spaced.
+-- @param str The raw argument string
+-- @param numargs How many arguments to get (default 1)
+-- @param startpos Where in the string to start scanning (default  1)
+-- @return Returns arg1, arg2, ..., nextposition\\
+-- Missing arguments will be returned as nils. 'nextposition' is returned as 1e9 at the end of the string.
+function SimpleCalc:GetArgs(str, numargs, startpos)
+	numargs = numargs or 1
+	startpos = max(startpos or 1, 1)
+
+	local pos=startpos
+
+	-- find start of new arg
+	pos = strfind(str, "[^ ]", pos)
+	if not pos then	-- whoops, end of string
+		return nils(numargs, 1e9)
+	end
+
+	if numargs<1 then
+		return pos
+	end
+
+	-- quoted or space separated? find out which pattern to use
+	local delim_or_pipe
+	local ch = strsub(str, pos, pos)
+	if ch=='"' then
+		pos = pos + 1
+		delim_or_pipe='([|"])'
+	elseif ch=="'" then
+		pos = pos + 1
+		delim_or_pipe="([|'])"
+	else
+		delim_or_pipe="([| ])"
+	end
+
+	startpos = pos
+
+	while true do
+		-- find delimiter or hyperlink
+		local ch,_
+		pos,_,ch = strfind(str, delim_or_pipe, pos)
+
+		if not pos then break end
+
+		if ch=="|" then
+			-- some kind of escape
+
+			if strsub(str,pos,pos+1)=="|H" then
+				-- It's a |H....|hhyper link!|h
+				pos=strfind(str, "|h", pos+2)	-- first |h
+				if not pos then break end
+
+				pos=strfind(str, "|h", pos+2)	-- second |h
+				if not pos then break end
+			elseif strsub(str,pos, pos+1) == "|T" then
+				-- It's a |T....|t  texture
+				pos=strfind(str, "|t", pos+2)
+				if not pos then break end
+			end
+
+			pos=pos+2 -- skip past this escape (last |h if it was a hyperlink)
+
+		else
+			-- found delimiter, done with this arg
+			return strsub(str, startpos, pos-1), self:GetArgs(str, numargs-1, pos+1)
+		end
+
+	end
+
+	-- search aborted, we hit end of string. return it all as one argument. (yes, even if it's an unterminated quote or hyperlink)
+	return strsub(str, startpos), nils(numargs-1, 1e9)
+end
+
 
 local function GetMaxLevel()
     if GetMaxLevelForPlayerExpansion then
@@ -111,7 +193,7 @@ function SimpleCalc:OnLoad()
     SimpleCalc_LastResult = SimpleCalc_LastResult or 0
 
     -- Let the user know we're here
-    Message( 'v' .. scversion .. ' initiated! Type: /calc for help.' )
+    print( 'v' .. scversion .. ' initiated! Type: /calc for help.' )
 end
 
 function SimpleCalc:OnEvent(event, eventAddon)
@@ -179,130 +261,106 @@ function SimpleCalc:GetVariables()
 end
 
 -- Parse any user-passed parameters
-function SimpleCalc:ParseParameters( paramStr )
-    local lowerParam = paramStr:lower()
-    local i = 0
-    local addVar, calcVariable, varIsGlobal, clearVar, clearGlobal, clearChar
+function SimpleCalc:ParseParameters( input )
+	local arg1, arg2, arg3, arg4, arg5 = self:GetArgs(input, 5, 1)
 
-    if lowerParam == '' or lowerParam == 'help' then
+    if not arg1 or arg1:lower() == 'help' then
         return Usage()
     end
 
-    for param in lowerParam:gmatch( '[^%s]+' ) do -- This loops through the user input (stuff after /calc). We're going to be checking for arguments such as 'help' or 'addvar' and acting accordingly.
-        if i == 0 then
-            if param == 'addvar' then
-                addVar = true
-            elseif param == 'listvar' then
-                self:ListVariables()
-                return
-            elseif param == 'clearvar' then
-                clearVar = true
-            end
-        end
-        if addVar then -- User entered addvar so let's loop through the rest of the params.
-            if i == 1 then
-                if param == 'global' or param == 'g' then
-                    varIsGlobal = true
-                elseif param ~= 'char' and param ~= 'c' then
-                    Error( 'Invalid input: ' .. param )
-                    AddVarUsage()
-                    return
-                end
-            elseif i == 2 then -- Should be variable name
-                if param:match( '[^a-z]' ) then
-                    Error( 'Invalid input: ' .. param )
-                    Error( 'Variable name can only contain letters!' )
-                    return
-                else
-                    calcVariable = param
-                end
-            elseif i == 3 then -- Should be '='
-                if param ~= '=' then
-                    Error( 'Invalid input: ' .. param )
-                    Error( 'You must use an equals sign!' )
-                    return
-                end
-            elseif i == 4 then -- Should be number
-                local newParamStr = param
-                if newParamStr:match( '[a-z]' ) then
-                    newParamStr = self:ApplyVariables( newParamStr )
-                end
-                local evalParam = EvalString( newParamStr )
-                if not tonumber( evalParam ) then
-                    Error( 'Invalid input: ' .. param )
-                    Error( 'Variables can only be set to numbers or existing variables!' )
-                else
-                    local saveLocation, saveLocationStr = SimpleCalc_CharVariables, '[Character] '
-                    if varIsGlobal then
-                        saveLocation, saveLocationStr = calcVariables, '[Global] '
-                    end
-                    if evalParam ~= 0 then
-                        saveLocation[calcVariable] = evalParam
-                        Message( saveLocationStr .. 'set \'' .. calcVariable .. '\' to ' .. evalParam )
-                    else -- Variables set to 0 are just wiped out
-                        saveLocation[calcVariable] = nil
-                        Message( saveLocationStr .. 'Reset variable: ' .. calcVariable )
-                    end
-                end
-                return
-            end
-        elseif clearVar then
-            if i == 1 then
-                if param == 'global' or param == 'g' then
-                    clearGlobal = true
-                elseif param == 'char' or param == 'c' then
-                    clearChar = true
-                end
-            end
-        end
-        i = i + 1
+    arg1 = arg1:lower()
+
+    if arg1 == "listvar" then
+        return self:ListVariables()
     end
 
-    if addVar then -- User must have just typed /calc addvar so we'll give them a usage message.
-        AddVarUsage()
-        return
-    end
-
-    if clearVar then
-        if clearGlobal then
+    if arg1 == "clearvar" then
+        if arg2 == 'global' or arg2 == 'g' then
             calcVariables = {}
-            Message( 'Global user variables cleared!' )
-        elseif clearChar then
+            print( 'Global user variables cleared!' )
+        elseif arg2 == 'char' or arg2 == 'c' then
             SimpleCalc_CharVariables = {}
-            Message( 'Character user variables cleared!' )
+            print( 'Character user variables cleared!' )
         else
             calcVariables, SimpleCalc_CharVariables = {}, {}
-            Message( 'All user variables cleared!' )
+            print( 'All user variables cleared!' )
         end
         return
     end
 
-    local paramEval = lowerParam
+    if arg1 == 'addvar' then
+        if not arg2 or not arg3 or not arg4 or not arg5 then
+            return AddVarUsage()
+        end
+        arg2 = arg2:lower()
+        arg3 = arg3:lower()
+        arg4 = arg4:lower()
+        arg5 = arg5:lower()
 
-    if paramEval:match( '^[%%%+%-%*%^%/]' ) then
-        paramEval = format( '%s%s', SimpleCalc_LastResult, paramEval )
+        if arg2 ~= 'global' and arg2 ~= 'g' and arg2 ~= 'char' and arg2 ~= 'c' then
+            print( 'Invalid input: ' .. arg2 )
+            return AddVarUsage()
+        end
+
+        if arg3:match( '[^a-z]' ) then
+            print( 'Invalid input: ' .. arg3 )
+            print( 'Variable name can only contain letters!' )
+            return
+        end
+
+        if arg4 ~= '=' then
+            print( 'Invalid input: ' .. arg4 )
+            print( 'You must use an equals sign!' )
+            return
+        end
+
+        if arg5:match( '[a-z]' ) then
+            arg5 = self:ApplyVariables( arg5 )
+        end
+        local evalParam = EvalString( arg5 )
+        if not tonumber( evalParam ) then
+            print( 'Invalid input: ' .. arg5 )
+            print( 'Variables can only be set to numbers or existing variables!' )
+        else
+            local saveLocation, saveLocationStr = SimpleCalc_CharVariables, '[Character] '
+            if arg2 == 'global' or arg2 == 'g' then
+                saveLocation, saveLocationStr = calcVariables, '[Global] '
+            end
+            if evalParam ~= 0 then
+                saveLocation[arg3] = evalParam
+                print( saveLocationStr .. 'set \'' .. arg3 .. '\' to ' .. evalParam )
+            else -- Variables set to 0 are just wiped out
+                saveLocation[arg3] = nil
+                print( saveLocationStr .. 'Reset variable: ' .. arg3 )
+            end
+        end
+        return
+    end
+
+    if arg1:match( '^[%%%+%-%*%^%/]' ) then
+        arg1 = format( '%s%s', SimpleCalc_LastResult, arg1 )
         paramStr = format( '%s%s', SimpleCalc_LastResult, paramStr )
     end
 
-    if paramEval:match( '[a-z]' ) then
-        paramEval = self:ApplyVariables( paramEval )
+    if arg1:match( '[a-z]' ) then
+        arg1 = self:ApplyVariables( arg1 )
     end
 
-    if paramEval:match( '[a-z]' ) then
-        Error( 'Unrecognized variable!' )
-        Error( paramEval )
+    if arg1:match( '[a-z]' ) then
+        print( 'Unrecognized variable!' )
+        print( arg1 )
         return
     end
 
-    paramEval = paramEval:gsub( '%s+', '' ) -- Clean up whitespace
-    local evalStr = EvalString( paramEval )
+    arg1 = arg1:gsub( '%s+', '' ) -- Clean up whitespace
+    local evalStr = EvalString( arg1 )
 
     if evalStr then
-        Message( paramEval .. ' = ' .. evalStr )
+        print( arg1 .. ' = ' .. evalStr )
         SimpleCalc_LastResult = evalStr
     else
-        Error( 'Could not evaluate expression! Maybe an unrecognized symbol?' )
-        Error( paramEval )
+        print( 'Could not evaluate expression! Maybe an unrecognized symbol?' )
+        print( arg1 )
     end
 end
 
@@ -326,7 +384,7 @@ function SimpleCalc:ListVariables()
         if var['showEmpty'] and not returnStr then
             returnStr = format( 'There are no %s user variables.', var.type:lower() )
         end
-        Message( returnStr )
+        print( returnStr )
     end
     for _,varType in self:getVariableTables() do
         list( varType )
