@@ -81,6 +81,16 @@ local function SortTableForListing( t ) -- https://www.lua.org/pil/19.3.html
     return a
 end
 
+local function GetMaxLevel()
+    if GetMaxLevelForPlayerExpansion then
+        return GetMaxLevelForPlayerExpansion()
+    end
+    if MAX_PLAYER_LEVEL_TABLE and GetServerExpansionLevel then
+        return MAX_PLAYER_LEVEL_TABLE[GetServerExpansionLevel()]
+    end
+    return 60
+end
+
 -- From AceConsole-3.0.lua
 
 local function nils(n, ...)
@@ -165,17 +175,6 @@ function SimpleCalc:GetArgs(str, numargs, startpos)
 
 	-- search aborted, we hit end of string. return it all as one argument. (yes, even if it's an unterminated quote or hyperlink)
 	return strsub(str, startpos), nils(numargs-1, 1e9)
-end
-
-
-local function GetMaxLevel()
-    if GetMaxLevelForPlayerExpansion then
-        return GetMaxLevelForPlayerExpansion()
-    end
-    if MAX_PLAYER_LEVEL_TABLE and GetServerExpansionLevel then
-        return MAX_PLAYER_LEVEL_TABLE[GetServerExpansionLevel()]
-    end
-    return 60
 end
 
 function SimpleCalc:OnLoad()
