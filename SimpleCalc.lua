@@ -110,7 +110,7 @@ end
 -- @param startpos Where in the string to start scanning (default  1)
 -- @return Returns arg1, arg2, ..., nextposition\\
 -- Missing arguments will be returned as nils. 'nextposition' is returned as 1e9 at the end of the string.
-function SimpleCalc:GetArgs(str, numargs, startpos)
+local function GetArgs(str, numargs, startpos)
 	numargs = numargs or 1
 	startpos = max(startpos or 1, 1)
 
@@ -168,7 +168,7 @@ function SimpleCalc:GetArgs(str, numargs, startpos)
 
 		else
 			-- found delimiter, done with this arg
-			return strsub(str, startpos, pos-1), self:GetArgs(str, numargs-1, pos+1)
+			return strsub(str, startpos, pos-1), GetArgs(str, numargs-1, pos+1)
 		end
 
 	end
@@ -261,7 +261,7 @@ end
 
 -- Parse any user-passed parameters
 function SimpleCalc:ParseParameters( input )
-	local arg1, arg2, arg3, arg4, arg5 = self:GetArgs(input, 5, 1)
+	local arg1, arg2, arg3, arg4, arg5 = GetArgs(input, 5, 1)
 
     if not arg1 or arg1:lower() == 'help' then
         return Usage()
