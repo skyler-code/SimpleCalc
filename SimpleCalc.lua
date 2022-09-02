@@ -206,6 +206,7 @@ function SimpleCalc:GetVariables()
     local p = "player"
     if self.variables then return self.variables end
     self.variables = {
+        achieves  = GetTotalAchievementPoints,
         armor     = function() return select(3, UnitArmor(p)) end,
         hp        = function() return UnitHealthMax(p) end,
         power     = function() return UnitPowerMax(p) end,
@@ -220,8 +221,10 @@ function SimpleCalc:GetVariables()
     self.variables.health = self.variables.hp
     self.variables.mana = self.variables.power
 
+    local CURRENCY_IDS
+
     if isRetail then
-        local CURRENCY_IDS = {
+        CURRENCY_IDS = {
             garrison  = 824,
             orderhall = 1220,
             resources = Constants.CurrencyConsts.WAR_RESOURCES_CURRENCY_ID,
@@ -233,13 +236,6 @@ function SimpleCalc:GetVariables()
             honor     = Constants.CurrencyConsts.HONOR_CURRENCY_ID,
             conquest  = Constants.CurrencyConsts.CONQUEST_CURRENCY_ID,
         }
-        for k, v in pairs( CURRENCY_IDS ) do
-            self.variables[k] = function()
-                local currencyInfo = C_CurrencyInfo.GetCurrencyInfo(v) or {}
-                return currencyInfo.quantity or 0
-            end
-        end
-        self.variables.achieves = GetTotalAchievementPoints
         self.variables.ilvl = function() return ("%.2f"):format(select(2, GetAverageItemLevel())) end
         for k,v in pairs({CURRENCY_IDS.conquest, CURRENCY_IDS.honor}) do
             local pvpInfo = C_CurrencyInfo.GetCurrencyInfo(v) or {}
@@ -251,8 +247,29 @@ function SimpleCalc:GetVariables()
             end
         end
     else
+        CURRENCY_IDS = {
+            arena       = Constants.CurrencyConsts.CLASSIC_ARENA_POINTS_CURRENCY_ID,
+            champseals  = 241,
+            cooking     = 61,
+            heroism     = 101,
+            honor       = Constants.CurrencyConsts.CLASSIC_HONOR_CURRENCY_ID,
+            jctoken     = 61,
+            justice     = 42,
+            stonekeeper = 161,
+            valor       = 102,
+            venture     = 201,
+            wintergrasp = 126,
+        }
+
         for i = 1, 5 do
             self.variables[string.lower(_G["SPELL_STAT"..i.."_NAME"])] = function() return select(2, UnitStat(p, i)) or 0 end
+        end
+    end
+
+    for k, v in pairs( CURRENCY_IDS ) do
+        self.variables[k] = function()
+            local currencyInfo = C_CurrencyInfo.GetCurrencyInfo(v) or {}
+            return currencyInfo.quantity or 0
         end
     end
 
