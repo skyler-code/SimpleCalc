@@ -81,24 +81,26 @@ local function GetPlayerItemLevel()
         [INVSLOT_BODY] = true,
         [INVSLOT_TABARD] = true
     }
+    local playerItemLevel = 0
     if GetAverageItemLevel then
-        return select(2, GetAverageItemLevel())
-    end
-    local t, c = 0, 0
-    for i = INVSLOT_FIRST_EQUIPPED, INVSLOT_LAST_EQUIPPED do
-        if not IGNORED_ILVL_SLOTS[i] then
-            local k = GetInventoryItemLink("player", i)
-            if k then
-                local l = select(4, GetItemInfo(k))
-                t = t + l
+        playerItemLevel = select(2, GetAverageItemLevel())
+    else
+        local t, c = 0, 0
+        for i = INVSLOT_FIRST_EQUIPPED, INVSLOT_LAST_EQUIPPED do
+            if not IGNORED_ILVL_SLOTS[i] then
+                local k = GetInventoryItemLink("player", i)
+                if k then
+                    local l = select(4, GetItemInfo(k))
+                    t = t + l
+                end
+                c = c + 1
             end
-            c = c + 1
+        end
+        if c > 0 then
+            playerItemLevel = t / c
         end
     end
-    if c > 0 then
-        return t / c
-    end
-    return 0
+    return ("%.2f"):format(playerItemLevel)
 end
 
 -- From AceConsole-3.0.lua
@@ -223,7 +225,7 @@ function SimpleCalc:GetVariables()
             silver    = function() return GetMoney() / 100 end,
             gold      = function() return GetMoney() / 10000 end,
             maxxp     = function() return UnitXPMax(p) end,
-            ilvl      = function() return ("%.2f"):format(GetPlayerItemLevel()) end,
+            ilvl      = GetPlayerItemLevel,
             xp        = function() return UnitXP(p) end,
             xpleft    = function() if UnitLevel(p) == GetMaxPlayerLevel() then return 0 end return UnitXPMax(p) - UnitXP(p) end,
             last      = function() return SimpleCalc_LastResult end,
