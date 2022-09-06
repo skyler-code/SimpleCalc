@@ -3,7 +3,7 @@ local addonName = ...
 local SimpleCalc = CreateFrame( 'Frame', addonName )
 local scversion = GetAddOnMetadata( addonName, 'Version' )
 
-local tinsert, tsort, pairs = tinsert, table.sort, pairs
+local tinsert, tsort, pairs, strfind = tinsert, table.sort, pairs, strfind
 
 local isRetail = WOW_PROJECT_ID == WOW_PROJECT_MAINLINE
 
@@ -76,14 +76,29 @@ local function SortTableForListing( t ) -- https://www.lua.org/pil/19.3.html
     return a
 end
 
-local function GetMaxLevel()
-    if GetMaxLevelForPlayerExpansion then
-        return GetMaxLevelForPlayerExpansion()
+local function GetPlayerItemLevel()
+    local IGNORED_ILVL_SLOTS = {
+        [INVSLOT_BODY] = true,
+        [INVSLOT_TABARD] = true
+    }
+    if GetAverageItemLevel then
+        return select(2, GetAverageItemLevel())
     end
-    if MAX_PLAYER_LEVEL_TABLE and GetServerExpansionLevel then
-        return MAX_PLAYER_LEVEL_TABLE[GetServerExpansionLevel()]
+    local t, c = 0, 0
+    for i = INVSLOT_FIRST_EQUIPPED, INVSLOT_LAST_EQUIPPED do
+        if not IGNORED_ILVL_SLOTS[i] then
+            local k = GetInventoryItemLink("player", i)
+            if k then
+                local l = select(4, GetItemInfo(k))
+                t = t + l
+            end
+            c = c + 1
+        end
     end
-    return 60
+    if c > 0 then
+        return t / c
+    end
+    return 0
 end
 
 -- From AceConsole-3.0.lua
@@ -174,8 +189,7 @@ end
 
 function SimpleCalc:OnLoad()
     -- Register our slash commands
-    local slashCommands = { addonName:lower(), "calc" }
-    for k, v in pairs(slashCommands) do
+    for k, v in pairs({ addonName, "calc" }) do
         _G["SLASH_"..addonName:upper()..k] = "/" .. v
     end
     SlashCmdList[addonName:upper()] = function(...) self:ParseParameters(...) end
@@ -193,103 +207,172 @@ end
 function SimpleCalc:OnEvent(event, eventAddon)
     if event == "ADDON_LOADED" and eventAddon == addonName then
         self:OnLoad()
-        self:UnregisterEvent("ADDON_LOADED")
+        self:UnregisterEvent(event)
     end
 end
 
 function SimpleCalc:GetVariables()
-    local p = "player"
-    if self.variables then return self.variables end
-    self.variables = {
-        achieves  = GetTotalAchievementPoints,
-        armor     = function() return select(3, UnitArmor(p)) end,
-        hp        = function() return UnitHealthMax(p) end,
-        power     = function() return UnitPowerMax(p) end,
-        copper    = function() return GetMoney() end,
-        silver    = function() return GetMoney() / 100 end,
-        gold      = function() return GetMoney() / 10000 end,
-        maxxp     = function() return UnitXPMax(p) end,
-        xp        = function() return UnitXP(p) end,
-        xpleft    = function() if UnitLevel(p) == GetMaxLevel() then return 0 end return UnitXPMax(p) - UnitXP(p) end,
-        last      = function() return SimpleCalc_LastResult end,
-    }
-    self.variables.health = self.variables.hp
-    self.variables.mana = self.variables.power
-
-    local CURRENCY_IDS
-
-    if isRetail then
-        CURRENCY_IDS = {
-            garrison  = 824,
-            orderhall = 1220,
-            resources = Constants.CurrencyConsts.WAR_RESOURCES_CURRENCY_ID,
-            oil       = 1101,
-            dubloon   = 1710,
-            stygia    = 1767,
-            anima     = Constants.CurrencyConsts.CURRENCY_ID_RESERVOIR_ANIMA,
-            ash       = 1828, 
-            honor     = Constants.CurrencyConsts.HONOR_CURRENCY_ID,
-            conquest  = Constants.CurrencyConsts.CONQUEST_CURRENCY_ID,
+    if not self.variables then
+        local p = "player"
+        self.variables = {
+            achieves  = GetTotalAchievementPoints,
+            armor     = function() return select(3, UnitArmor(p)) end,
+            hp        = function() return UnitHealthMax(p) end,
+            power     = function() return UnitPowerMax(p) end,
+            copper    = function() return GetMoney() end,
+            silver    = function() return GetMoney() / 100 end,
+            gold      = function() return GetMoney() / 10000 end,
+            maxxp     = function() return UnitXPMax(p) end,
+            ilvl      = function() return ("%.2f"):format(GetPlayerItemLevel()) end,
+            xp        = function() return UnitXP(p) end,
+            xpleft    = function() if UnitLevel(p) == GetMaxPlayerLevel() then return 0 end return UnitXPMax(p) - UnitXP(p) end,
+            last      = function() return SimpleCalc_LastResult end,
         }
-        self.variables.ilvl = function() return ("%.2f"):format(select(2, GetAverageItemLevel())) end
-        for k,v in pairs({CURRENCY_IDS.conquest, CURRENCY_IDS.honor}) do
-            local pvpInfo = C_CurrencyInfo.GetCurrencyInfo(v) or {}
-            local pvpName = string.lower(pvpInfo.name or "")
-            self.variables['max'..pvpName] = function() return C_CurrencyInfo.GetCurrencyInfo(v).maxQuantity end
-            self.variables[pvpName..'left'] = function()
-                local pInfo = C_CurrencyInfo.GetCurrencyInfo(v)
-                return pInfo.maxQuantity - pInfo.quantity
+        self.variables.health = self.variables.hp
+        self.variables.mana = self.variables.power
+
+        local CURRENCY_IDS
+        if isRetail then
+            CURRENCY_IDS = {
+                garrison  = 824,
+                orderhall = 1220,
+                resources = Constants.CurrencyConsts.WAR_RESOURCES_CURRENCY_ID,
+                oil       = 1101,
+                dubloon   = 1710,
+                stygia    = 1767,
+                anima     = Constants.CurrencyConsts.CURRENCY_ID_RESERVOIR_ANIMA,
+                ash       = 1828, 
+                honor     = Constants.CurrencyConsts.HONOR_CURRENCY_ID,
+                conquest  = Constants.CurrencyConsts.CONQUEST_CURRENCY_ID,
+            }
+            for k,v in ipairs({CURRENCY_IDS.conquest, CURRENCY_IDS.honor}) do
+                local pvpInfo = C_CurrencyInfo.GetCurrencyInfo(v) or {}
+                local pvpName = (pvpInfo.name or ""):lower()
+                self.variables['max'..pvpName] = function() return C_CurrencyInfo.GetCurrencyInfo(v).maxQuantity end
+                self.variables[pvpName..'left'] = function()
+                    local pInfo = C_CurrencyInfo.GetCurrencyInfo(v)
+                    return pInfo.maxQuantity - pInfo.quantity
+                end
+            end
+        else
+            CURRENCY_IDS = {
+                arena       = Constants.CurrencyConsts.CLASSIC_ARENA_POINTS_CURRENCY_ID,
+                champseals  = 241,
+                cooking     = 61,
+                heroism     = 101,
+                honor       = Constants.CurrencyConsts.CLASSIC_HONOR_CURRENCY_ID,
+                jctoken     = 61,
+                justice     = 42,
+                stonekeeper = 161,
+                valor       = 102,
+                venture     = 201,
+                wintergrasp = 126,
+            }
+
+            for i = 1, NUM_STATS do
+                local statName = _G["SPELL_STAT"..i.."_NAME"]:lower()
+                self.variables[statName] = function() return select(2, UnitStat(p, i)) end
             end
         end
-    else
-        CURRENCY_IDS = {
-            arena       = Constants.CurrencyConsts.CLASSIC_ARENA_POINTS_CURRENCY_ID,
-            champseals  = 241,
-            cooking     = 61,
-            heroism     = 101,
-            honor       = Constants.CurrencyConsts.CLASSIC_HONOR_CURRENCY_ID,
-            jctoken     = 61,
-            justice     = 42,
-            stonekeeper = 161,
-            valor       = 102,
-            venture     = 201,
-            wintergrasp = 126,
-        }
 
-        for i = 1, 5 do
-            self.variables[string.lower(_G["SPELL_STAT"..i.."_NAME"])] = function() return select(2, UnitStat(p, i)) or 0 end
+        for k, v in pairs( CURRENCY_IDS ) do
+            self.variables[k] = function()
+                local currencyInfo = C_CurrencyInfo.GetCurrencyInfo(v) or {}
+                return currencyInfo.quantity or 0
+            end
         end
     end
-
-    for k, v in pairs( CURRENCY_IDS ) do
-        self.variables[k] = function()
-            local currencyInfo = C_CurrencyInfo.GetCurrencyInfo(v) or {}
-            return currencyInfo.quantity or 0
-        end
-    end
-
     return self.variables
 end
 
 -- Parse any user-passed parameters
 function SimpleCalc:ParseParameters( input )
-	local arg1, arg2, arg3, arg4, arg5 = GetArgs(input, 5, 1)
+    local lowerParam = input:lower()
+    local i = 0
+    local addVar, calcVariable, varIsGlobal, clearVar, clearGlobal, clearChar
 
-    if not arg1 or arg1:lower() == 'help' then
-        return Usage()
+    if ( lowerParam == '' or lowerParam == 'help' ) then
+        return self:Usage()
     end
 
-    arg1 = arg1:lower()
-
-    if arg1 == "listvar" then
-        return self:ListVariables()
+    for param in lowerParam:gmatch( '[^%s]+' ) do -- This loops through the user input (stuff after /calc). We're going to be checking for arguments such as 'help' or 'addvar' and acting accordingly.
+        if ( i == 0 ) then
+            if ( param == 'addvar' ) then
+                addVar = true
+            elseif ( param == 'listvar' ) then
+                return self:ListVariables()
+            elseif ( param == 'clearvar' ) then
+                clearVar = true
+            end
+        end
+        if ( addVar ) then -- User entered addvar so let's loop through the rest of the params.
+            if ( i == 1 ) then
+                if ( param == 'global' or param == 'g' ) then
+                    varIsGlobal = true
+                elseif ( param ~= 'char' and param ~= 'c' ) then
+                    print( 'Invalid input: ' .. param )
+                    self:AddVarUsage()
+                    return
+                end
+            elseif ( i == 2 ) then -- Should be variable name
+                if ( param:match( '[^a-z]' ) ) then
+                    print( 'Invalid input: ' .. param )
+                    print( 'Variable name can only contain letters!' )
+                    return
+                else
+                    calcVariable = param;
+                end
+            elseif ( i == 3 ) then -- Should be '='
+                if ( param ~= '=' ) then
+                    print( 'Invalid input: ' .. param )
+                    print( 'You must use an equals sign!' )
+                    return
+                end
+            elseif ( i == 4 ) then -- Should be number
+                local newParamStr = param;
+                if ( newParamStr:match( '[a-z]' ) ) then
+                    newParamStr = self:ApplyVariables( newParamStr )
+                end
+                local evalParam = EvalString( newParamStr )
+                if ( not tonumber( evalParam ) ) then
+                    print( 'Invalid input: ' .. param )
+                    print( 'Variables can only be set to numbers or existing variables!' )
+                else
+                    local saveLocation, saveLocationStr = SimpleCalc_CharVariables, '[Character] '
+                    if ( varIsGlobal ) then
+                        saveLocation, saveLocationStr = calcVariables, '[Global] '
+                    end
+                    if ( evalParam ~= 0 ) then
+                        saveLocation[calcVariable] = evalParam
+                        print( saveLocationStr .. 'set \'' .. calcVariable .. '\' to ' .. evalParam )
+                    else -- Variables set to 0 are just wiped out
+                        saveLocation[calcVariable] = nil
+                        print( saveLocationStr .. 'Reset variable: ' .. calcVariable )
+                    end
+                end
+                return
+            end
+        elseif ( clearVar ) then
+            if ( i == 1 ) then
+                if ( param == 'global' or param == 'g' ) then
+                    clearGlobal = true
+                elseif ( param == 'char' or param == 'c' ) then
+                    clearChar = true
+                end
+            end
+        end
+        i = i + 1
     end
 
-    if arg1 == "clearvar" then
-        if arg2 == 'global' or arg2 == 'g' then
+    if ( addVar ) then -- User must have just typed /calc addvar so we'll give them a usage message.
+        return self:AddVarUsage()
+    end
+
+    if ( clearVar ) then
+        if ( clearGlobal ) then
             calcVariables = {}
             print( 'Global user variables cleared!' )
-        elseif arg2 == 'char' or arg2 == 'c' then
+        elseif ( clearChar ) then
             SimpleCalc_CharVariables = {}
             print( 'Character user variables cleared!' )
         else
@@ -299,79 +382,32 @@ function SimpleCalc:ParseParameters( input )
         return
     end
 
-    if arg1 == 'addvar' then
-        if not arg2 or not arg3 or not arg4 or not arg5 then
-            return AddVarUsage()
-        end
-        arg2 = arg2:lower()
-        arg3 = arg3:lower()
-        arg4 = arg4:lower()
-        arg5 = arg5:lower()
+    local paramEval = lowerParam;
 
-        if arg2 ~= 'global' and arg2 ~= 'g' and arg2 ~= 'char' and arg2 ~= 'c' then
-            print( 'Invalid input: ' .. arg2 )
-            return AddVarUsage()
-        end
-
-        if arg3:match( '[^a-z]' ) then
-            print( 'Invalid input: ' .. arg3 )
-            print( 'Variable name can only contain letters!' )
-            return
-        end
-
-        if arg4 ~= '=' then
-            print( 'Invalid input: ' .. arg4 )
-            print( 'You must use an equals sign!' )
-            return
-        end
-
-        if arg5:match( '[a-z]' ) then
-            arg5 = self:ApplyVariables( arg5 )
-        end
-        local evalParam = EvalString( arg5 )
-        if not tonumber( evalParam ) then
-            print( 'Invalid input: ' .. arg5 )
-            print( 'Variables can only be set to numbers or existing variables!' )
-        else
-            local saveLocation, saveLocationStr = SimpleCalc_CharVariables, '[Character] '
-            if arg2 == 'global' or arg2 == 'g' then
-                saveLocation, saveLocationStr = calcVariables, '[Global] '
-            end
-            if evalParam ~= 0 then
-                saveLocation[arg3] = evalParam
-                print( saveLocationStr .. 'set \'' .. arg3 .. '\' to ' .. evalParam )
-            else -- Variables set to 0 are just wiped out
-                saveLocation[arg3] = nil
-                print( saveLocationStr .. 'Reset variable: ' .. arg3 )
-            end
-        end
-        return
+    if ( paramEval:match( '^[%%%+%-%*%^%/]' ) ) then
+        paramEval = format( '%s%s', SimpleCalc_LastResult, paramEval )
+        input = format( '%s%s', SimpleCalc_LastResult, input )
     end
 
-    if arg1:match( '^[%%%+%-%*%^%/]' ) then
-        arg1 = format( '%s%s', SimpleCalc_LastResult, arg1 )
-        paramStr = format( '%s%s', SimpleCalc_LastResult, paramStr )
+    if ( paramEval:match( '[a-z]' ) ) then
+        paramEval = self:ApplyVariables( paramEval )
     end
 
-    if arg1:match( '[a-z]' ) then
-        arg1 = self:ApplyVariables( arg1 )
-    end
-
-    if arg1:match( '[a-z]' ) then
+    if ( paramEval:match( '[a-z]' ) ) then
         print( 'Unrecognized variable!' )
-        print( arg1 )
+        print( paramEval )
         return
     end
 
-    arg1 = arg1:gsub( '%s+', '' ) -- Clean up whitespace
-    local evalStr = EvalString( arg1 )
+    paramEval = paramEval:gsub( '%s+', '' ) -- Clean up whitespace
+    local evalStr = EvalString( paramEval )
 
-    if evalStr then
-        print( arg1 .. ' = ' .. evalStr )
+    if ( evalStr ) then
+        print( paramEval .. ' = ' .. evalStr )
         SimpleCalc_LastResult = evalStr
     else
         print( 'Could not evaluate expression! Maybe an unrecognized symbol?' )
-        print( arg1 )
+        print( paramEval )
     end
 end
 
