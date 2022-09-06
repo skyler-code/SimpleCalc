@@ -11,7 +11,7 @@ local ITEM_LINK_STR_MATCH = "item[%-?%d:]+"
 
 local gprint = print
 local function print(...)
-    gprint("|cff33ff99["..addonName.."]|r:",...)
+    gprint("|cff33ff99"..addonName.."|r:",...)
 end
 
 local function UnescapeStr(str)
