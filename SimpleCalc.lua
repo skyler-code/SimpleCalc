@@ -31,13 +31,8 @@ local function UnescapeStr(str)
 end
 
 local function StrItemCountSub(str)
-    local _, count = str:gsub(ITEM_LINK_STR_MATCH, '')
-    for i = 1, count do
-        local itemLink = str:match(ITEM_LINK_STR_MATCH)
-        if itemLink then
-            local itemCount = GetItemCount(itemLink, true)
-            str = str:gsub(itemLink, itemCount)
-        end
+    for itemLink in str:gmatch(ITEM_LINK_STR_MATCH) do
+        str = str:gsub(itemLink, GetItemCount(itemLink, true))
     end
     return UnescapeStr(str)
 end
