@@ -294,7 +294,7 @@ function SimpleCalc:ParseParameters( input )
     local addVar, calcVariable, varIsGlobal, clearVar, clearGlobal, clearChar
 
     if ( lowerParam == '' or lowerParam == 'help' ) then
-        return self:Usage()
+        return Usage()
     end
 
     for param in lowerParam:gmatch( '[^%s]+' ) do -- This loops through the user input (stuff after /calc). We're going to be checking for arguments such as 'help' or 'addvar' and acting accordingly.
@@ -313,7 +313,7 @@ function SimpleCalc:ParseParameters( input )
                     varIsGlobal = true
                 elseif ( param ~= 'char' and param ~= 'c' ) then
                     print( 'Invalid input: ' .. param )
-                    self:AddVarUsage()
+                    AddVarUsage()
                     return
                 end
             elseif ( i == 2 ) then -- Should be variable name
@@ -367,7 +367,7 @@ function SimpleCalc:ParseParameters( input )
     end
 
     if ( addVar ) then -- User must have just typed /calc addvar so we'll give them a usage message.
-        return self:AddVarUsage()
+        return AddVarUsage()
     end
 
     if ( clearVar ) then
