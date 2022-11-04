@@ -240,7 +240,6 @@ function SimpleCalc:GetVariables()
                 garrison  = 824,
                 orderhall = 1220,
                 resources = Constants.CurrencyConsts.WAR_RESOURCES_CURRENCY_ID,
-                oil       = 1101,
                 dubloon   = 1710,
                 stygia    = 1767,
                 anima     = Constants.CurrencyConsts.CURRENCY_ID_RESERVOIR_ANIMA,
