@@ -218,6 +218,7 @@ function SimpleCalc:GetVariables()
         local p = "player"
         self.variables = {
             achieves  = GetTotalAchievementPoints,
+            exalted  = function() return 42000 - select(5,GetWatchedFactionInfo()) or 0 end,
             armor     = function() return select(3, UnitArmor(p)) end,
             hp        = function() return UnitHealthMax(p) end,
             power     = function() return UnitPowerMax(p) end,
