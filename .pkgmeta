@@ -1,0 +1,7 @@
+package-as: SimpleCalc
+
+# Ignore takes place before folder's moving takes place
+ignore:
+ - LICENSE.txt
+ - README.txt
+ 
