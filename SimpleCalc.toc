@@ -4,6 +4,6 @@
 ## SavedVariables: calcVariables
 ## SavedVariablesPerCharacter: SimpleCalc_CharVariables, SimpleCalc_LastResult
 ## Author: brues
-## Version: 1.9.1
+## Version: 1.9.2
 
 SimpleCalc.lua
