@@ -174,6 +174,7 @@ function SimpleCalc:GetVariables()
             CURRENCY_IDS = {
                 arena       = Constants.CurrencyConsts.CLASSIC_ARENA_POINTS_CURRENCY_ID,
                 champseals  = 241,
+                conquest    = 221,
                 cooking     = 81,
                 heroism     = 101,
                 honor       = Constants.CurrencyConsts.CLASSIC_HONOR_CURRENCY_ID,
