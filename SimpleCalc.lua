@@ -180,6 +180,7 @@ function SimpleCalc:GetVariables()
                 honor       = Constants.CurrencyConsts.CLASSIC_HONOR_CURRENCY_ID,
                 jctoken     = 61,
                 justice     = 42,
+                sidereal    = 2589,
                 stonekeeper = 161,
                 valor       = 102,
                 venture     = 201,
