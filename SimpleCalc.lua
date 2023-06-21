@@ -182,6 +182,7 @@ function SimpleCalc:GetVariables()
                 justice     = 42,
                 sidereal    = 2589,
                 stonekeeper = 161,
+                triumph     = 301,
                 valor       = 102,
                 venture     = 201,
                 wintergrasp = 126,
