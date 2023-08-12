@@ -6,6 +6,7 @@ local scversion = GetAddOnMetadata( addonName, 'Version' )
 local tinsert, tsort, pairs, strfind = tinsert, table.sort, pairs, strfind
 
 local isRetail = WOW_PROJECT_ID == WOW_PROJECT_MAINLINE
+local isWrath = WOW_PROJECT_ID == WOW_PROJECT_WRATH_CLASSIC
 
 local ITEM_LINK_STR_MATCH = "item[%-?%d:]+"
 
@@ -148,7 +149,7 @@ function SimpleCalc:GetVariables()
         self.variables.health = self.variables.hp
         self.variables.mana = self.variables.power
 
-        local CURRENCY_IDS
+        local CURRENCY_IDS = {}
         if isRetail then
             CURRENCY_IDS = {
                 garrison  = 824,
@@ -171,22 +172,24 @@ function SimpleCalc:GetVariables()
                 end
             end
         else
-            CURRENCY_IDS = {
-                arena       = Constants.CurrencyConsts.CLASSIC_ARENA_POINTS_CURRENCY_ID,
-                champseals  = 241,
-                conquest    = 221,
-                cooking     = 81,
-                heroism     = 101,
-                honor       = Constants.CurrencyConsts.CLASSIC_HONOR_CURRENCY_ID,
-                jctoken     = 61,
-                justice     = 42,
-                sidereal    = 2589,
-                stonekeeper = 161,
-                triumph     = 301,
-                valor       = 102,
-                venture     = 201,
-                wintergrasp = 126,
-            }
+            if isWrath then
+                CURRENCY_IDS = {
+                    arena       = Constants.CurrencyConsts.CLASSIC_ARENA_POINTS_CURRENCY_ID,
+                    champseals  = 241,
+                    conquest    = 221,
+                    cooking     = 81,
+                    heroism     = 101,
+                    honor       = Constants.CurrencyConsts.CLASSIC_HONOR_CURRENCY_ID,
+                    jctoken     = 61,
+                    justice     = 42,
+                    sidereal    = 2589,
+                    stonekeeper = 161,
+                    triumph     = 301,
+                    valor       = 102,
+                    venture     = 201,
+                    wintergrasp = 126,
+                }
+            end
 
             for i = 1, NUM_STATS do
                 local statName = _G["SPELL_STAT"..i.."_NAME"]:lower()
