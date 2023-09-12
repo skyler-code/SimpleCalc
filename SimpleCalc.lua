@@ -7,6 +7,7 @@ local tinsert, tsort, pairs, strfind = tinsert, table.sort, pairs, strfind
 
 local isRetail = WOW_PROJECT_ID == WOW_PROJECT_MAINLINE
 local isWrath = WOW_PROJECT_ID == WOW_PROJECT_WRATH_CLASSIC
+local isClassic = WOW_PROJECT_ID == WOW_PROJECT_CLASSIC
 
 local ITEM_LINK_STR_MATCH = "item[%-?%d:]+"
 
@@ -132,8 +133,7 @@ function SimpleCalc:GetVariables()
     if not self.variables then
         local p = "player"
         self.variables = {
-            achieves  = GetTotalAchievementPoints,
-            exalted  = function() return 42000 - select(5,GetWatchedFactionInfo()) or 0 end,
+            exalted   = function() return 42000 - select(5,GetWatchedFactionInfo()) or 0 end,
             armor     = function() return select(3, UnitArmor(p)) end,
             hp        = function() return UnitHealthMax(p) end,
             power     = function() return UnitPowerMax(p) end,
@@ -148,6 +148,16 @@ function SimpleCalc:GetVariables()
         }
         self.variables.health = self.variables.hp
         self.variables.mana = self.variables.power
+
+        if not isClassic then
+            self.variables.achieves = function()
+                if isClassic then
+                    return 0
+                else
+                    return GetTotalAchievementPoints()
+                end
+            end
+        end
 
         local CURRENCY_IDS = {}
         if isRetail then
