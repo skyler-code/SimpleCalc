@@ -199,6 +199,8 @@ function SimpleCalc:GetVariables()
                     venture     = 201,
                     wintergrasp = 126,
                 }
+            else
+                self.variables['honor'] = function() return select(2, GetPVPThisWeekStats()) end
             end
 
             for i = 1, NUM_STATS do
