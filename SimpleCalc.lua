@@ -199,6 +199,7 @@ function SimpleCalc:GetVariables()
                     venture     = 201,
                     wintergrasp = 126,
                     defiler     = 2711,
+                    frost       = 341,
                 }
             else
                 self.variables['honor'] = function() return select(2, GetPVPThisWeekStats()) end
