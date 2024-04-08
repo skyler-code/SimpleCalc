@@ -207,8 +207,7 @@ function SimpleCalc:GetVariables()
 
         for k, v in pairs( CURRENCY_IDS ) do
             self.variables[k] = function()
-                local currencyInfo = C_CurrencyInfo.GetCurrencyInfo(v) or {}
-                return currencyInfo.quantity or 0
+                return (C_CurrencyInfo.GetCurrencyInfo(v) or {}).quantity or 0
             end
         end
     end
