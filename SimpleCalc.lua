@@ -149,14 +149,8 @@ function SimpleCalc:GetVariables()
         self.variables.health = self.variables.hp
         self.variables.mana = self.variables.power
 
-        if not isClassic then
-            self.variables.achieves = function()
-                if isClassic then
-                    return 0
-                else
-                    return GetTotalAchievementPoints()
-                end
-            end
+        if not isClassic and GetTotalAchievementPoints then
+            self.variables.achieves = function() return GetTotalAchievementPoints() or 0 end
         end
 
         local CURRENCY_IDS = {}
