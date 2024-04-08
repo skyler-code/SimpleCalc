@@ -4,10 +4,14 @@ local SimpleCalc = CreateFrame( 'Frame', addonName )
 local scversion = GetAddOnMetadata( addonName, 'Version' )
 
 local tinsert, tsort, pairs, strfind = tinsert, table.sort, pairs, strfind
+local ceil, min, max = ceil, min, max
 
 local isRetail = WOW_PROJECT_ID == WOW_PROJECT_MAINLINE
 local isWrath = WOW_PROJECT_ID == WOW_PROJECT_WRATH_CLASSIC
 local isClassic = WOW_PROJECT_ID == WOW_PROJECT_CLASSIC
+
+local JP_CONVERSION_RATE = 11.58
+local BADGE_CAP = ceil(4000/JP_CONVERSION_RATE)
 
 local ITEM_LINK_STR_MATCH = "item[%-?%d:]+"
 
@@ -195,6 +199,17 @@ function SimpleCalc:GetVariables()
                     scourgestone = 2711,
                     frost        = 341,
                 }
+                self.variables['badgecap'] = BADGE_CAP
+                self.variables['jp'] = function()
+                    local triumph = (C_CurrencyInfo.GetCurrencyInfo(CURRENCY_IDS.triumph) or {}).quantity or 0
+                    local frost = (C_CurrencyInfo.GetCurrencyInfo(CURRENCY_IDS.frost) or {}).quantity or 0
+                    return JP_CONVERSION_RATE * (triumph + frost)
+                end
+                self.variables['extrafrost'] = function()
+                    local triumph = (C_CurrencyInfo.GetCurrencyInfo(CURRENCY_IDS.triumph) or {}).quantity or 0
+                    local frost = (C_CurrencyInfo.GetCurrencyInfo(CURRENCY_IDS.frost) or {}).quantity or 0
+                    return max(frost - min(BADGE_CAP - triumph, BADGE_CAP), 0)
+                end
             else
                 self.variables['honor'] = function() return select(2, GetPVPThisWeekStats()) end
             end
