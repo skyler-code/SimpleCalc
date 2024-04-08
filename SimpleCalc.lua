@@ -178,22 +178,22 @@ function SimpleCalc:GetVariables()
         else
             if isWrath then
                 CURRENCY_IDS = {
-                    arena       = Constants.CurrencyConsts.CLASSIC_ARENA_POINTS_CURRENCY_ID,
-                    champseals  = 241,
-                    conquest    = 221,
-                    cooking     = 81,
-                    heroism     = 101,
-                    honor       = Constants.CurrencyConsts.CLASSIC_HONOR_CURRENCY_ID,
-                    jctoken     = 61,
-                    justice     = 42,
-                    sidereal    = 2589,
-                    stonekeeper = 161,
-                    triumph     = 301,
-                    valor       = 102,
-                    venture     = 201,
-                    wintergrasp = 126,
-                    defiler     = 2711,
-                    frost       = 341,
+                    arena        = Constants.CurrencyConsts.CLASSIC_ARENA_POINTS_CURRENCY_ID,
+                    champseals   = 241,
+                    conquest     = 221,
+                    cooking      = 81,
+                    heroism      = 101,
+                    honor        = Constants.CurrencyConsts.CLASSIC_HONOR_CURRENCY_ID,
+                    jctoken      = 61,
+                    justice      = 42,
+                    sidereal     = 2589,
+                    stonekeeper  = 161,
+                    triumph      = 301,
+                    valor        = 102,
+                    venture      = 201,
+                    wintergrasp  = 126,
+                    scourgestone = 2711,
+                    frost        = 341,
                 }
             else
                 self.variables['honor'] = function() return select(2, GetPVPThisWeekStats()) end
