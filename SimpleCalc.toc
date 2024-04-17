@@ -1,4 +1,4 @@
-## Interface: 100107
+## Interface: 100206
 ## Title: SimpleCalc
 ## Notes: A simple mathematical calculator. Type /calc for help!
 ## SavedVariables: calcVariables
