@@ -11,8 +11,9 @@ local tinsert, tsort, pairs, strfind = tinsert, table.sort, pairs, strfind
 local ceil, min, max = ceil, min, max
 
 local isRetail = WOW_PROJECT_ID == WOW_PROJECT_MAINLINE
-local isWrath = WOW_PROJECT_ID == WOW_PROJECT_WRATH_CLASSIC
 local isClassic = WOW_PROJECT_ID == WOW_PROJECT_CLASSIC
+local isCata = (C_CurrencyInfo and C_CurrencyInfo.GetCurrencyInfo(395)) ~= nil -- temp way to check since Blizzard hasn't updated WOW_PROJECT_ID on beta yet
+local isWrath = not isCata and WOW_PROJECT_ID == WOW_PROJECT_WRATH_CLASSIC
 
 local JP_CONVERSION_RATE = 11.58
 local BADGE_CAP = ceil(4000/JP_CONVERSION_RATE)
@@ -183,45 +184,56 @@ function SimpleCalc:GetVariables()
                     return pInfo.maxQuantity - pInfo.quantity
                 end
             end
-        else
-            if isWrath then
-                CURRENCY_IDS = {
-                    arena        = Constants.CurrencyConsts.CLASSIC_ARENA_POINTS_CURRENCY_ID,
-                    champseals   = 241,
-                    conquest     = 221,
-                    cooking      = 81,
-                    heroism      = 101,
-                    honor        = Constants.CurrencyConsts.CLASSIC_HONOR_CURRENCY_ID,
-                    jctoken      = 61,
-                    justice      = 42,
-                    sidereal     = 2589,
-                    stonekeeper  = 161,
-                    triumph      = 301,
-                    valor        = 102,
-                    venture      = 201,
-                    wintergrasp  = 126,
-                    scourgestone = 2711,
-                    frost        = 341,
-                }
-                self.variables['badgecap'] = BADGE_CAP
-                self.variables['jp'] = function()
-                    local triumph = (C_CurrencyInfo.GetCurrencyInfo(CURRENCY_IDS.triumph) or {}).quantity or 0
-                    local frost = (C_CurrencyInfo.GetCurrencyInfo(CURRENCY_IDS.frost) or {}).quantity or 0
-                    return JP_CONVERSION_RATE * (triumph + frost)
-                end
-                self.variables['extrafrost'] = function()
-                    local triumph = (C_CurrencyInfo.GetCurrencyInfo(CURRENCY_IDS.triumph) or {}).quantity or 0
-                    local frost = (C_CurrencyInfo.GetCurrencyInfo(CURRENCY_IDS.frost) or {}).quantity or 0
-                    return max(frost - min(BADGE_CAP - triumph, BADGE_CAP), 0)
-                end
-            else
-                self.variables['honor'] = function() return select(2, GetPVPThisWeekStats()) end
+        end
+        if isClassic then
+            self.variables['honor'] = function() return select(2, GetPVPThisWeekStats()) end
+        end
+        if isWrath then
+            CURRENCY_IDS = {
+                arena        = Constants.CurrencyConsts.CLASSIC_ARENA_POINTS_CURRENCY_ID,
+                champseals   = 241,
+                conquest     = 221,
+                cooking      = 81,
+                heroism      = 101,
+                honor        = Constants.CurrencyConsts.CLASSIC_HONOR_CURRENCY_ID,
+                jctoken      = 61,
+                justice      = 42,
+                sidereal     = 2589,
+                stonekeeper  = 161,
+                triumph      = 301,
+                valor        = 102,
+                venture      = 201,
+                wintergrasp  = 126,
+                scourgestone = 2711,
+                frost        = 341,
+            }
+            self.variables['badgecap'] = BADGE_CAP
+            self.variables['jp'] = function()
+                local triumph = (C_CurrencyInfo.GetCurrencyInfo(CURRENCY_IDS.triumph) or {}).quantity or 0
+                local frost = (C_CurrencyInfo.GetCurrencyInfo(CURRENCY_IDS.frost) or {}).quantity or 0
+                return JP_CONVERSION_RATE * (triumph + frost)
             end
+            self.variables['extrafrost'] = function()
+                local triumph = (C_CurrencyInfo.GetCurrencyInfo(CURRENCY_IDS.triumph) or {}).quantity or 0
+                local frost = (C_CurrencyInfo.GetCurrencyInfo(CURRENCY_IDS.frost) or {}).quantity or 0
+                return max(frost - min(BADGE_CAP - triumph, BADGE_CAP), 0)
+            end
+        end
 
-            for i = 1, NUM_STATS do
-                local statName = _G["SPELL_STAT"..i.."_NAME"]:lower()
-                self.variables[statName] = function() return select(2, UnitStat(p, i)) end
-            end
+        if isCata then
+            CURRENCY_IDS = {
+                arena        = Constants.CurrencyConsts.CLASSIC_ARENA_POINTS_CURRENCY_ID,
+                champseals   = 241,
+                conquest     = 221,
+                cooking      = 81,
+                honor        = Constants.CurrencyConsts.CLASSIC_HONOR_CURRENCY_ID,
+                justice      = 395,
+                valor        = 396,
+                jp           = 395,
+                vp           = 396,
+                sidereal     = 2589,
+                scourgestone = 2711,
+            }
         end
 
         for k, v in pairs( CURRENCY_IDS ) do
