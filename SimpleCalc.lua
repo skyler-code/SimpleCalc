@@ -3,6 +3,10 @@ local addonName = ...
 local SimpleCalc = CreateFrame( 'Frame', addonName )
 local scversion = GetAddOnMetadata( addonName, 'Version' )
 
+if scversion == "@project-version@" then
+    scversion = "DevBuild"
+end
+
 local tinsert, tsort, pairs, strfind = tinsert, table.sort, pairs, strfind
 local ceil, min, max = ceil, min, max
 
