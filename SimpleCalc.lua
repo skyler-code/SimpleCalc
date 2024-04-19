@@ -12,8 +12,8 @@ local ceil, min, max = ceil, min, max
 
 local isRetail = WOW_PROJECT_ID == WOW_PROJECT_MAINLINE
 local isClassic = WOW_PROJECT_ID == WOW_PROJECT_CLASSIC
-local isCata = (C_CurrencyInfo and C_CurrencyInfo.GetCurrencyInfo(395)) ~= nil -- temp way to check since Blizzard hasn't updated WOW_PROJECT_ID on beta yet
-local isWrath = not isCata and WOW_PROJECT_ID == WOW_PROJECT_WRATH_CLASSIC
+local isCata = WOW_PROJECT_ID == WOW_PROJECT_CATACLYSM_CLASSIC
+local isWrath = WOW_PROJECT_ID == WOW_PROJECT_WRATH_CLASSIC
 
 local JP_CONVERSION_RATE = 11.58
 local BADGE_CAP = ceil(4000/JP_CONVERSION_RATE)
