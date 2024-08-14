@@ -1,7 +1,7 @@
 -- Initialize SimpleCalc
 local addonName = ...
 local SimpleCalc = CreateFrame( 'Frame', addonName )
-local scversion = GetAddOnMetadata( addonName, 'Version' )
+local scversion = C_AddOns.GetAddOnMetadata( addonName, 'Version' )
 
 if scversion == "@project-version@" then
     scversion = "DevBuild"
@@ -43,7 +43,7 @@ end
 
 local function StrItemCountSub(str)
     for itemLink in str:gmatch(ITEM_LINK_STR_MATCH) do
-        str = str:gsub(itemLink, GetItemCount(itemLink, true))
+        str = str:gsub(itemLink, C_Item.GetItemCount(itemLink, true))
     end
     return UnescapeStr(str)
 end
