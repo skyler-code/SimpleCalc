@@ -1,9 +1,0 @@
-## Interface: 11502
-## Title: SimpleCalc
-## Notes: A simple mathematical calculator. Type /calc for help!
-## SavedVariables: calcVariables
-## SavedVariablesPerCharacter: SimpleCalc_CharVariables, SimpleCalc_LastResult
-## Author: brues
-## Version: @project-version@
-
-SimpleCalc.lua
