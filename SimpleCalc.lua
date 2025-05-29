@@ -1,5 +1,5 @@
 -- Initialize SimpleCalc
-local addonName = ...
+local addonName, addonTable = ...
 local SimpleCalc = CreateFrame( 'Frame', addonName )
 local scversion = C_AddOns.GetAddOnMetadata( addonName, 'Version' )
 
@@ -7,18 +7,13 @@ if scversion == "@project-version@" then
     scversion = "DevBuild"
 end
 
-local tinsert, tsort, pairs, strfind = tinsert, table.sort, pairs, strfind
-local ceil, min, max = ceil, min, max
-
-local isRetail = WOW_PROJECT_ID == WOW_PROJECT_MAINLINE
-local isClassic = WOW_PROJECT_ID == WOW_PROJECT_CLASSIC
-local isCata = WOW_PROJECT_ID == WOW_PROJECT_CATACLYSM_CLASSIC
-local isWrath = WOW_PROJECT_ID == WOW_PROJECT_WRATH_CLASSIC
-
-local JP_CONVERSION_RATE = 11.58
-local BADGE_CAP = ceil(4000/JP_CONVERSION_RATE)
-
 local ITEM_LINK_STR_MATCH = "item[%-?%d:]+"
+
+local DefaultDB = {
+    global = {},
+    profiles = {},
+    lastResult = 0,
+}
 
 local gprint = print
 local function print(...)
@@ -72,7 +67,7 @@ end
 
 local function EvalString( str )
     local strFunc = loadstring( 'return ' .. str )
-    if ( pcall( strFunc ) ) then
+    if strFunc and pcall(strFunc) then
         return strFunc()
     end
 end
@@ -83,7 +78,7 @@ local function SortTableForListing( t ) -- https://www.lua.org/pil/19.3.html
         local exV = type(v) == "function" and v() or v
         tinsert( a, n .. " = " .. exV )
     end
-    tsort( a )
+    table.sort( a )
     return a
 end
 
@@ -99,10 +94,9 @@ local function GetPlayerItemLevel()
         local t, c = 0, 0
         for i = INVSLOT_FIRST_EQUIPPED, INVSLOT_LAST_EQUIPPED do
             if not IGNORED_ILVL_SLOTS[i] then
-                local k = GetInventoryItemLink("player", i)
-                if k then
-                    local l = select(4, GetItemInfo(k))
-                    t = t + l
+                local item = Item:CreateFromEquipmentSlot(i)
+                if item then
+                    t = t + item:GetCurrentItemLevel()
                 end
                 c = c + 1
             end
@@ -121,11 +115,17 @@ function SimpleCalc:OnLoad()
     end
     SlashCmdList[addonName:upper()] = function(...) self:ParseParameters(...) end
 
-    -- Initialize our variables
-    SimpleCalc_CharVariables = SimpleCalc_CharVariables or {}
-    calcVariables = calcVariables or {}
-    
-    SimpleCalc_LastResult = SimpleCalc_LastResult or 0
+    self.charKey = FULL_PLAYER_NAME:format(UnitName("player"), GetRealmName())
+
+    if not SimpleCalcDB then
+        SimpleCalcDB = DefaultDB
+    end
+    self.db = SimpleCalcDB
+    self.pdb = self.db.profiles[self.charKey]
+    if not self.db.profiles[self.charKey] then
+        self.db.profiles[self.charKey] = {}
+    end
+    self.pdb = self.db.profiles[self.charKey]
 
     -- Let the user know we're here
     print( 'v' .. scversion .. ' initiated! Type: /calc for help.' )
@@ -140,105 +140,53 @@ end
 
 function SimpleCalc:GetVariables()
     if not self.variables then
-        local p = "player"
         self.variables = {
-            exalted   = function() return 42000 - select(5,GetWatchedFactionInfo()) or 0 end,
-            armor     = function() return select(3, UnitArmor(p)) end,
-            hp        = function() return UnitHealthMax(p) end,
-            power     = function() return UnitPowerMax(p) end,
+            armor     = function() return select(3, UnitArmor("player")) end,
+            hp        = function() return UnitHealthMax("player") end,
+            power     = function() return UnitPowerMax("player") end,
             copper    = function() return GetMoney() end,
             silver    = function() return GetMoney() / 100 end,
             gold      = function() return GetMoney() / 10000 end,
-            maxxp     = function() return UnitXPMax(p) end,
+            maxxp     = function() return UnitXPMax("player") end,
             ilvl      = GetPlayerItemLevel,
-            xp        = function() return UnitXP(p) end,
-            xpleft    = function() if UnitLevel(p) == GetMaxPlayerLevel() then return 0 end return UnitXPMax(p) - UnitXP(p) end,
-            last      = function() return SimpleCalc_LastResult end,
+            xp        = function() return UnitXP("player") end,
+            xpleft    = function() if UnitLevel("player") == GetMaxPlayerLevel() then return 0 end return UnitXPMax("player") - UnitXP("player") end,
+            last      = function() return self.db.lastResult end,
         }
+
         self.variables.health = self.variables.hp
         self.variables.mana = self.variables.power
 
-        if not isClassic and GetTotalAchievementPoints then
-            self.variables.achieves = function() return GetTotalAchievementPoints() or 0 end
+        for repIndex, repRequired in pairs({ [6] = 9000, [7] = 21000, [8] = 42000 } ) do
+            self.variables[GetText("FACTION_STANDING_LABEL"..repIndex, 2):lower()] = function()
+                return repRequired - (select(5,GetWatchedFactionInfo()) or 0)
+            end
         end
 
-        local CURRENCY_IDS = {}
-        if isRetail then
-            CURRENCY_IDS = {
-                garrison  = 824,
-                orderhall = 1220,
-                resources = Constants.CurrencyConsts.WAR_RESOURCES_CURRENCY_ID,
-                dubloon   = 1710,
-                stygia    = 1767,
-                anima     = Constants.CurrencyConsts.CURRENCY_ID_RESERVOIR_ANIMA,
-                ash       = 1828, 
-                honor     = Constants.CurrencyConsts.HONOR_CURRENCY_ID,
-                conquest  = Constants.CurrencyConsts.CONQUEST_CURRENCY_ID,
-            }
-            for k,v in ipairs({CURRENCY_IDS.conquest, CURRENCY_IDS.honor}) do
-                local pvpInfo = C_CurrencyInfo.GetCurrencyInfo(v) or {}
-                local pvpName = (pvpInfo.name or ""):lower()
-                self.variables['max'..pvpName] = function() return C_CurrencyInfo.GetCurrencyInfo(v).maxQuantity end
-                self.variables[pvpName..'left'] = function()
-                    local pInfo = C_CurrencyInfo.GetCurrencyInfo(v)
-                    return pInfo.maxQuantity - pInfo.quantity
+        if LibStub then
+            local Junker = LibStub("AceAddon-3.0"):GetAddon("Junker")
+            if Junker and Junker.GetCurrentProfit then
+                self.variables.profit = function()
+                    return Junker:GetCurrentProfit()
                 end
             end
         end
-        if isClassic then
-            self.variables['honor'] = function() return select(2, GetPVPThisWeekStats()) end
+
+        if GetTotalAchievementPoints and GetTotalAchievementPoints() ~= nil then
+            self.variables.achieves = function() return GetTotalAchievementPoints() or 0 end
         end
-        if isWrath then
-            CURRENCY_IDS = {
-                arena        = Constants.CurrencyConsts.CLASSIC_ARENA_POINTS_CURRENCY_ID,
-                champseals   = 241,
-                conquest     = 221,
-                cooking      = 81,
-                heroism      = 101,
-                honor        = Constants.CurrencyConsts.CLASSIC_HONOR_CURRENCY_ID,
-                jctoken      = 61,
-                justice      = 42,
-                sidereal     = 2589,
-                stonekeeper  = 161,
-                triumph      = 301,
-                valor        = 102,
-                venture      = 201,
-                wintergrasp  = 126,
-                scourgestone = 2711,
-                frost        = 341,
-            }
-            self.variables['badgecap'] = BADGE_CAP
-            self.variables['jp'] = function()
-                local triumph = (C_CurrencyInfo.GetCurrencyInfo(CURRENCY_IDS.triumph) or {}).quantity or 0
-                local frost = (C_CurrencyInfo.GetCurrencyInfo(CURRENCY_IDS.frost) or {}).quantity or 0
-                return JP_CONVERSION_RATE * (triumph + frost)
-            end
-            self.variables['extrafrost'] = function()
-                local triumph = (C_CurrencyInfo.GetCurrencyInfo(CURRENCY_IDS.triumph) or {}).quantity or 0
-                local frost = (C_CurrencyInfo.GetCurrencyInfo(CURRENCY_IDS.frost) or {}).quantity or 0
-                return max(frost - min(BADGE_CAP - triumph, BADGE_CAP), 0)
+
+        if addonTable.XPAC_VARIABLES then
+            for k, v in pairs(addonTable.XPAC_VARIABLES) do
+                self.variables[k] = v
             end
         end
 
-        if isCata then
-            CURRENCY_IDS = {
-                arena        = Constants.CurrencyConsts.CLASSIC_ARENA_POINTS_CURRENCY_ID,
-                champseals   = 241,
-                conquest     = 221,
-                cooking      = 81,
-                honor        = Constants.CurrencyConsts.CLASSIC_HONOR_CURRENCY_ID,
-                justice      = 395,
-                valor        = 396,
-                jp           = 395,
-                vp           = 396,
-                sidereal     = 2589,
-                scourgestone = 2711,
-            }
-        end
-
-        for k, v in pairs( CURRENCY_IDS ) do
-            self.variables[k] = function()
-                return (C_CurrencyInfo.GetCurrencyInfo(v) or {}).quantity or 0
+        if addonTable.CURRENCY_IDS then
+            for k, v in pairs( addonTable.CURRENCY_IDS ) do
+                self.variables[k] = function()
+                    return (C_CurrencyInfo.GetCurrencyInfo(v) or {}).quantity or 0
+                end
             end
         end
     end
@@ -298,9 +246,9 @@ function SimpleCalc:ParseParameters( input )
                     print( 'Invalid input: ' .. param )
                     print( 'Variables can only be set to numbers or existing variables!' )
                 else
-                    local saveLocation, saveLocationStr = SimpleCalc_CharVariables, '[Character] '
+                    local saveLocation, saveLocationStr = self.pdb, '[Character] '
                     if ( varIsGlobal ) then
-                        saveLocation, saveLocationStr = calcVariables, '[Global] '
+                        saveLocation, saveLocationStr = self.db.global, '[Global] '
                     end
                     if ( evalParam ~= 0 ) then
                         saveLocation[calcVariable] = evalParam
@@ -330,13 +278,13 @@ function SimpleCalc:ParseParameters( input )
 
     if ( clearVar ) then
         if ( clearGlobal ) then
-            calcVariables = {}
+            SimpleCalcDB.global = {}
             print( 'Global user variables cleared!' )
         elseif ( clearChar ) then
-            SimpleCalc_CharVariables = {}
+            SimpleCalcDB.profiles[self.charKey] = {}
             print( 'Character user variables cleared!' )
         else
-            calcVariables, SimpleCalc_CharVariables = {}, {}
+            SimpleCalcDB.global, SimpleCalcDB.profiles[self.charKey] = {}, {}
             print( 'All user variables cleared!' )
         end
         return
@@ -345,8 +293,8 @@ function SimpleCalc:ParseParameters( input )
     local paramEval = lowerParam;
 
     if ( paramEval:match( '^[%%%+%-%*%^%/]' ) ) then
-        paramEval = format( '%s%s', SimpleCalc_LastResult, paramEval )
-        input = format( '%s%s', SimpleCalc_LastResult, input )
+        paramEval = format( '%s%s', self.db.lastResult, paramEval )
+        input = format( '%s%s', self.db.lastResult, input )
     end
 
     if ( paramEval:match( '[a-z]' ) ) then
@@ -364,7 +312,7 @@ function SimpleCalc:ParseParameters( input )
 
     if ( evalStr ) then
         print( paramEval .. ' = ' .. evalStr )
-        SimpleCalc_LastResult = evalStr
+        self.db.lastResult = evalStr
     else
         print( 'Could not evaluate expression! Maybe an unrecognized symbol?' )
         print( paramEval )
@@ -373,8 +321,8 @@ end
 
 function SimpleCalc:getVariableTables()
     local system = { type='System', list=self:GetVariables() }
-    local global = { type='Global', list=calcVariables, showEmpty=true }
-    local character = { type='Character', list=SimpleCalc_CharVariables, showEmpty=true }
+    local global = { type='Global', list=self.db.global, showEmpty=true }
+    local character = { type='Character', list=self.pdb, showEmpty=true }
     return pairs( { system, global, character } )
 end
 
@@ -409,4 +357,4 @@ function SimpleCalc:ApplyVariables( str )
 end
 
 SimpleCalc:RegisterEvent("ADDON_LOADED")
-SimpleCalc:SetScript("OnEvent", function(self, ...) self:OnEvent(...) end)
+SimpleCalc:SetScript("OnEvent", SimpleCalc.OnEvent)

@@ -1,9 +1,13 @@
-## Interface: 110002, 40401, 11504
+## Interface: 110002, 40401, 11507
 ## Title: SimpleCalc
 ## Notes: A simple mathematical calculator. Type /calc for help!
-## SavedVariables: calcVariables
-## SavedVariablesPerCharacter: SimpleCalc_CharVariables, SimpleCalc_LastResult
+## SavedVariables: SimpleCalcDB
 ## Author: brues
 ## Version: @project-version@
+## OptionalDependencies: Junker
+
+Variables-Retail.lua
+Variables-Classic.lua
+Variables-Cata.lua
 
 SimpleCalc.lua
