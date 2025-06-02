@@ -173,7 +173,7 @@ function SimpleCalc:GetVariables()
         end
 
         if GetTotalAchievementPoints and GetTotalAchievementPoints() ~= nil then
-            self.variables.achieves = function() return GetTotalAchievementPoints() or 0 end
+            self.variables.achieves = GetTotalAchievementPoints
         end
 
         if addonTable.XPAC_VARIABLES then
