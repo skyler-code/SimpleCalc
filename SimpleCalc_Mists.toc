@@ -1,0 +1,14 @@
+## Interface: 110002, 50500, 40402, 11507
+## Title: SimpleCalc
+## Notes: A simple mathematical calculator. Type /calc for help!
+## SavedVariables: SimpleCalcDB
+## Author: brues
+## Version: @project-version@
+## OptionalDeps: Junker, Syndicator
+
+Variables-Retail.lua [AllowLoadGameType mainline]
+Variables-Classic.lua [AllowLoadGameType vanilla]
+Variables-Cata.lua [AllowLoadGameType cata]
+Variables-Mop.lua [AllowLoadGameType mists]
+
+SimpleCalc.lua

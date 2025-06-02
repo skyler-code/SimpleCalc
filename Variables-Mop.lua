@@ -1,4 +1,4 @@
-if WOW_PROJECT_ID ~= WOW_PROJECT_CATACLYSM_CLASSIC then return end
+if WOW_PROJECT_ID ~= WOW_PROJECT_MISTS_CLASSIC then return end
 local _, addonTable = ...
 
 addonTable.CURRENCY_IDS = {
@@ -13,8 +13,6 @@ addonTable.CURRENCY_IDS = {
     vp           = VALOR_CURRENCY,
     tb           = 391,
     dmf          = 515,
-    moltenfront  = 416,
-    fissure      = 3148,
 }
 
 addonTable.XPAC_VARIABLES = {}
