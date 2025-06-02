@@ -36,9 +36,27 @@ local function UnescapeStr(str)
     return str
 end
 
+local Syndicator = Syndicator
+local function GetItemCount(itemLink)
+    if Syndicator then
+        local itemID = C_Item.GetItemInfoInstant(itemLink)
+        local inventorySearch = Syndicator.API.GetInventoryInfoByItemID(itemID, false, true)
+        if inventorySearch then
+            local count = 0
+            for _, v in ipairs(inventorySearch.characters) do
+                count = count + v.bags + v.bank
+            end
+            return count
+        end
+        return 0
+    else
+        return C_Item.GetItemCount(itemLink, true)
+    end
+end
+
 local function StrItemCountSub(str)
     for itemLink in str:gmatch(ITEM_LINK_STR_MATCH) do
-        str = str:gsub(itemLink, C_Item.GetItemCount(itemLink, true))
+        str = str:gsub(itemLink, GetItemCount(itemLink))
     end
     return UnescapeStr(str)
 end

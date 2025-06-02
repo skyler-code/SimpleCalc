@@ -4,7 +4,7 @@
 ## SavedVariables: SimpleCalcDB
 ## Author: brues
 ## Version: @project-version@
-## OptionalDependencies: Junker
+## OptionalDeps: Junker, Syndicator
 
 Variables-Retail.lua
 Variables-Classic.lua
