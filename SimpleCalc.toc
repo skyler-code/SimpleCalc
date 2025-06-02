@@ -1,4 +1,4 @@
-## Interface: 110002, 40401, 11507
+## Interface: 110002, 40402, 11507
 ## Title: SimpleCalc
 ## Notes: A simple mathematical calculator. Type /calc for help!
 ## SavedVariables: SimpleCalcDB
