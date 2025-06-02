@@ -356,5 +356,9 @@ function SimpleCalc:ApplyVariables( str )
     return str
 end
 
+function SimpleCalc:Calculate(input)
+    return EvalString(self:ApplyVariables(input))
+end
+
 SimpleCalc:RegisterEvent("ADDON_LOADED")
 SimpleCalc:SetScript("OnEvent", SimpleCalc.OnEvent)
