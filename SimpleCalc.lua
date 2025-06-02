@@ -159,7 +159,7 @@ function SimpleCalc:GetVariables()
 
         for repIndex, repRequired in pairs({ [6] = 9000, [7] = 21000, [8] = 42000 } ) do
             self.variables[GetText("FACTION_STANDING_LABEL"..repIndex, 2):lower()] = function()
-                return repRequired - (select(5,GetWatchedFactionInfo()) or 0)
+                return max(repRequired - (select(5,GetWatchedFactionInfo()) or 0), 0)
             end
         end
 
