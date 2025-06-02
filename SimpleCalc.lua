@@ -37,6 +37,7 @@ local function UnescapeStr(str)
 end
 
 local Syndicator = Syndicator
+local realmName = GetNormalizedRealmName()
 local function GetItemCount(itemLink)
     if Syndicator then
         local itemID = C_Item.GetItemInfoInstant(itemLink)
@@ -44,7 +45,9 @@ local function GetItemCount(itemLink)
         if inventorySearch then
             local count = 0
             for _, v in ipairs(inventorySearch.characters) do
-                count = count + v.bags + v.bank
+                if v.realmNormalized == realmName then
+                    count = count + v.bags + v.bank
+                end
             end
             return count
         end
@@ -133,7 +136,7 @@ function SimpleCalc:OnLoad()
     end
     SlashCmdList[addonName:upper()] = function(...) self:ParseParameters(...) end
 
-    self.charKey = FULL_PLAYER_NAME:format(UnitName("player"), GetRealmName())
+    self.charKey = FULL_PLAYER_NAME:format(UnitName("player"), realmName)
 
     if not SimpleCalcDB then
         SimpleCalcDB = DefaultDB
