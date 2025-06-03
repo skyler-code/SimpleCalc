@@ -37,8 +37,9 @@ local function UnescapeStr(str)
 end
 
 local Syndicator = Syndicator
-local realmName = GetNormalizedRealmName()
+local realmName
 local function GetItemCount(itemLink)
+    if not realmName then realmName = GetNormalizedRealmName() end
     if Syndicator then
         local itemID = C_Item.GetItemInfoInstant(itemLink)
         local inventorySearch = Syndicator.API.GetInventoryInfoByItemID(itemID, false, true)
@@ -134,9 +135,10 @@ function SimpleCalc:OnLoad()
     for k, v in pairs({ addonName, "calc" }) do
         _G["SLASH_"..addonName:upper()..k] = "/" .. v
     end
+
     SlashCmdList[addonName:upper()] = function(...) self:ParseParameters(...) end
 
-    self.charKey = FULL_PLAYER_NAME:format(UnitName("player"), realmName)
+    self.charKey = FULL_PLAYER_NAME:format(UnitName("player"), GetRealmName())
 
     if not SimpleCalcDB then
         SimpleCalcDB = DefaultDB
