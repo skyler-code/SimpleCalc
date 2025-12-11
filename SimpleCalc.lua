@@ -151,14 +151,7 @@ function SimpleCalc:OnLoad()
     self.pdb = self.db.profiles[self.charKey]
 
     -- Let the user know we're here
-    print( 'v' .. scversion .. ' initiated! Type: /calc for help.' )
-end
-
-function SimpleCalc:OnEvent(event, eventAddon)
-    if event == "ADDON_LOADED" and eventAddon == addonName then
-        self:OnLoad()
-        self:UnregisterEvent(event)
-    end
+    --print( 'v' .. scversion .. ' initiated! Type: /calc for help.' )
 end
 
 function SimpleCalc:GetVariables()
@@ -383,5 +376,6 @@ function SimpleCalc:Calculate(input)
     return EvalString(self:ApplyVariables(input))
 end
 
-SimpleCalc:RegisterEvent("ADDON_LOADED")
-SimpleCalc:SetScript("OnEvent", SimpleCalc.OnEvent)
+EventUtil.ContinueOnAddOnLoaded(addonName, function()
+    SimpleCalc:OnLoad()
+end)

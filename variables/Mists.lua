@@ -1,4 +1,3 @@
-if WOW_PROJECT_ID ~= WOW_PROJECT_CATACLYSM_CLASSIC then return end
 local _, addonTable = ...
 
 addonTable.CURRENCY_IDS = {
@@ -13,8 +12,7 @@ addonTable.CURRENCY_IDS = {
     vp           = VALOR_CURRENCY,
     tb           = 391,
     dmf          = 515,
-    moltenfront  = 416,
-    fissure      = 3148,
+    cele         = 3350,
 }
 
 addonTable.XPAC_VARIABLES = {}
@@ -24,6 +22,13 @@ addonTable.XPAC_VARIABLES['vpleft'] = function()
     return vpInfo.maxQuantity - vpInfo.totalEarned
 end
 
-addonTable.XPAC_VARIABLES['heroicsleft'] = function()
-    return ceil(addonTable.XPAC_VARIABLES.vpleft() / 240)
+addonTable.XPAC_VARIABLES['repmod'] = function()
+    local mod = 1
+    if IsPlayerSpell(78632) then
+        mod = mod + 0.1
+    end
+    if C_UnitAuras.GetPlayerAuraBySpellID(46668) or C_UnitAuras.GetPlayerAuraBySpellID(136583) then
+        mod = mod + 0.1
+    end
+    return mod
 end
