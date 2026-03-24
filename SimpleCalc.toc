@@ -1,11 +1,10 @@
-## Interface: 110002, 50500, 40402, 11507, 38000
+## Interface: 110002, 50500, 11507, 38000
 ## Title: SimpleCalc
 ## Notes: A simple mathematical calculator. Type /calc for help!
 ## SavedVariables: SimpleCalcDB
 ## Author: brues
 ## Version: @project-version@
-## OptionalDeps: Junker, Syndicator
-
-variables\[Game].lua
+## OptionalDeps: Junker, Syndicator, RepBuddy
 
 SimpleCalc.lua
+variables\[Game].lua
