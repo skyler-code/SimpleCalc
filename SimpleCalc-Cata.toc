@@ -1,0 +1,10 @@
+## Interface: 40402
+## Title: SimpleCalc
+## Notes: A simple mathematical calculator. Type /calc for help!
+## SavedVariables: SimpleCalcDB
+## Author: brues
+## Version: @project-version@
+## OptionalDeps: Junker, Syndicator, RepBuddy
+
+SimpleCalc.lua
+variables\Cata.lua
