@@ -1,4 +1,4 @@
-## Interface: 110002, 50504, 11507, 38001
+## Interface: 11402
 ## Title: SimpleCalc
 ## Notes: A simple mathematical calculator. Type /calc for help!
 ## SavedVariables: SimpleCalcDB
@@ -7,4 +7,4 @@
 ## OptionalDeps: Junker, Syndicator, RepBuddy
 
 SimpleCalc.lua
-variables\[Game].lua
+variables\Vanilla.lua

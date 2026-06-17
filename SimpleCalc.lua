@@ -3,33 +3,12 @@ local addonName, addonTable = ...
 local SimpleCalc = {}
 _G[addonName] = SimpleCalc
 
-addonTable.playerClass = PlayerUtil.GetClassFile()
+addonTable.playerClass = select(2, UnitClass('player'))
 
 local printColor = CreateColor(0.2, 1.0, 0.6)
 local gprint = print
 local function print(...)
     gprint(printColor:WrapTextInColorCode(addonName)..":",...)
-end
-
-local Syndicator = Syndicator
-local realmName
-local function GetItemCount(itemLink)
-    if Syndicator then
-        local inventorySearch = Syndicator.API.GetInventoryInfoByItemLink(itemLink, false, true)
-        if inventorySearch then
-            realmName = realmName or GetNormalizedRealmName()
-            local count = 0
-            for _, v in ipairs(inventorySearch.characters) do
-                if v.realmNormalized == realmName then
-                    count = count + v.bags + v.bank
-                end
-            end
-            return count
-        end
-        return 0
-    else
-        return C_Item.GetItemCount(itemLink, true)
-    end
 end
 
 local function UnescapeStr(str)
@@ -50,7 +29,7 @@ end
 
 local function StrItemCountSub(str)
     for itemLink in str:gmatch("item[%-?%d:]+") do
-        str = str:gsub(itemLink, GetItemCount(itemLink))
+        str = str:gsub(itemLink, C_Item.GetItemCount(itemLink, true))
     end
     return UnescapeStr(str)
 end
@@ -147,6 +126,39 @@ function SimpleCalc:OnLoad()
     self:RegisterDB()
 end
 
+local function GetPlayerItemLevel()
+    local IGNORED_ILVL_SLOTS = {
+        [INVSLOT_BODY] = true,
+        [INVSLOT_TABARD] = true
+    }
+    local playerItemLevel = 0
+    if GetAverageItemLevel then
+        playerItemLevel = select(2, GetAverageItemLevel())
+    else
+        local t, c = 0, 0
+        local hasOffhand = false
+        for i = INVSLOT_FIRST_EQUIPPED, INVSLOT_LAST_EQUIPPED do
+            if not IGNORED_ILVL_SLOTS[i] then
+                local item = Item:CreateFromEquipmentSlot(i)
+                if item and not item:IsItemEmpty() then
+                    t = t + item:GetCurrentItemLevel()
+                    if i == INVSLOT_OFFHAND then
+                        hasOffhand = true
+                    end
+                end
+                c = c + 1
+            end
+        end
+        if not hasOffhand then
+            c = c + 1
+        end
+        if c > 0 then
+            playerItemLevel = t / c
+        end
+    end
+    return ("%.2f"):format(playerItemLevel)
+end
+
 function SimpleCalc:GetVariables()
     if not self.variables then
         self.variables = {
@@ -156,7 +168,7 @@ function SimpleCalc:GetVariables()
             copper    = GetMoney,
             silver    = function() return GetMoney() / 100 end,
             gold      = function() return GetMoney() / 10000 end,
-            ilvl      = function() return RoundToSignificantDigits((select(2, GetAverageItemLevel())), 2) end,
+            ilvl      = GetPlayerItemLevel,
             xp        = function() return UnitXP("player") end,
             maxxp     = function() return UnitXPMax("player") end,
             xpleft    = function() return UnitLevel("player") < GetMaxPlayerLevel() and UnitXPMax("player") - UnitXP("player") or 0 end,
@@ -184,29 +196,31 @@ function SimpleCalc:GetVariables()
             end
         end
 
-        EventUtil.ContinueOnAddOnLoaded("Junker", function()
-            local Junker = LibStub("AceAddon-3.0"):GetAddon("Junker")
-            if Junker and Junker.GetCurrentProfit then
-                self.variables.profit = function()
-                    return Junker:GetCurrentProfit()
+        if EventUtil and EventUtil.ContinueOnAddOnLoaded then
+            EventUtil.ContinueOnAddOnLoaded("Junker", function()
+                local Junker = LibStub("AceAddon-3.0"):GetAddon("Junker")
+                if Junker and Junker.GetCurrentProfit then
+                    self.variables.profit = function()
+                        return Junker:GetCurrentProfit()
+                    end
                 end
-            end
-        end)
+            end)
 
-        EventUtil.ContinueOnAddOnLoaded("RepBuddy", function()
-            self.variables.repearnedtoday = function()
-                local watchedFaction = GetWatchedFactionData()
-                if not watchedFaction then return 0 end
-                return LibStub("AceAddon-3.0"):GetAddon("RepBuddy"):GetTodaysFactionGains(watchedFaction.name)
-            end
-            self.variables.repearnedyesterday = function()
-                local watchedFaction = GetWatchedFactionData()
-                if not watchedFaction then return 0 end
-                return LibStub("AceAddon-3.0"):GetAddon("RepBuddy"):GetYesterdaysFactionGains(watchedFaction.name)
-            end
-        end)
+            EventUtil.ContinueOnAddOnLoaded("RepBuddy", function()
+                self.variables.repearnedtoday = function()
+                    local watchedFaction = GetWatchedFactionData()
+                    if not watchedFaction then return 0 end
+                    return LibStub("AceAddon-3.0"):GetAddon("RepBuddy"):GetTodaysFactionGains(watchedFaction.name)
+                end
+                self.variables.repearnedyesterday = function()
+                    local watchedFaction = GetWatchedFactionData()
+                    if not watchedFaction then return 0 end
+                    return LibStub("AceAddon-3.0"):GetAddon("RepBuddy"):GetYesterdaysFactionGains(watchedFaction.name)
+                end
+            end)
+        end
 
-        if GetTotalAchievementPoints() ~= nil then
+        if GetTotalAchievementPoints and GetTotalAchievementPoints() ~= nil then
             self.variables.achieves = GetTotalAchievementPoints
         end
 
@@ -226,101 +240,27 @@ end
 -- Parse any user-passed parameters
 function SimpleCalc:ParseParameters(input)
     local lowerParam = input:lower()
-    local i = 0
-    local addVar, calcVariable, varIsGlobal, clearVar, clearGlobal, clearChar
 
     if lowerParam == '' or lowerParam == 'help' then
         return Usage()
     end
 
-    for param in lowerParam:gmatch('[^%s]+') do -- This loops through the user input (stuff after /calc). We're going to be checking for arguments such as 'help' or 'addvar' and acting accordingly.
-        if i == 0 then
-            if param == 'addvar' then
-                addVar = true
-            elseif param == 'listvar' then
-                return self:ListVariables()
-            elseif param == 'clearvar' then
-                clearVar = true
-            end
-        end
-        if addVar then -- User entered addvar so let's loop through the rest of the params.
-            if i == 1 then
-                if param == 'global' or param == 'g' then
-                    varIsGlobal = true
-                elseif param ~= 'char' and param ~= 'c' then
-                    print('Invalid input: ' .. param)
-                    AddVarUsage()
-                    return
-                end
-            elseif i == 2 then -- Should be variable name
-                if param:match('[^a-z]') then
-                    print('Invalid input: ' .. param)
-                    print('Variable name can only contain letters!')
-                    return
-                else
-                    calcVariable = param;
-                end
-            elseif i == 3 then -- Should be '='
-                if param ~= '=' then
-                    print('Invalid input: ' .. param)
-                    print('You must use an equals sign!')
-                    return
-                end
-            elseif i == 4 then -- Should be number
-                local newParamStr = param;
-                if newParamStr:match('[a-z]') then
-                    newParamStr = self:ApplyVariables(newParamStr)
-                end
-                local evalParam = EvalString(newParamStr)
-                if not tonumber(evalParam) then
-                    print('Invalid input: ' .. param)
-                    print('Variables can only be set to numbers or existing variables!')
-                else
-                    local saveLocation, saveLocationStr = self.pdb, '[Character] '
-                    if varIsGlobal then
-                        saveLocation, saveLocationStr = self.db.global, '[Global] '
-                    end
-                    if evalParam ~= 0 then
-                        saveLocation[calcVariable] = evalParam
-                        print(saveLocationStr .. 'set \'' .. calcVariable .. '\' to ' .. evalParam)
-                    else -- Variables set to 0 are just wiped out
-                        saveLocation[calcVariable] = nil
-                        print(saveLocationStr .. 'Reset variable: ' .. calcVariable)
-                    end
-                end
-                return
-            end
-        elseif clearVar then
-            if i == 1 then
-                if param == 'global' or param == 'g' then
-                    clearGlobal = true
-                elseif param == 'char' or param == 'c' then
-                    clearChar = true
-                end
-            end
-        end
-        i = i + 1
+    local tokens = {}
+    for word in lowerParam:gmatch('[^%s]+') do
+        tinsert(tokens, word)
     end
 
-    if addVar then -- User must have just typed /calc addvar so we'll give them a usage message.
-        return AddVarUsage()
+    local cmd = tokens[1]
+
+    if cmd == 'listvar' then
+        return self:ListVariables()
+    elseif cmd == 'addvar' then
+        return self:HandleAddVar(tokens)
+    elseif cmd == 'clearvar' then
+        return self:HandleClearVar(tokens)
     end
 
-    if clearVar then
-        if clearGlobal then
-            SimpleCalcDB.global = {}
-            print('Global user variables cleared!')
-        elseif clearChar then
-            SimpleCalcDB.profiles[self.charKey] = {}
-            print('Character user variables cleared!')
-        else
-            SimpleCalcDB.global, SimpleCalcDB.profiles[self.charKey] = {}, {}
-            print('All user variables cleared!')
-        end
-        return
-    end
-
-    local paramEval = lowerParam;
+    local paramEval = lowerParam
 
     if paramEval:match('^[%%%+%-%*%^%/]') then
         paramEval = format('%s%s', self.pdb.lastResult or 0, paramEval)
@@ -346,6 +286,73 @@ function SimpleCalc:ParseParameters(input)
     else
         print('Could not evaluate expression! Maybe an unrecognized symbol?')
         print(paramEval)
+    end
+end
+
+function SimpleCalc:HandleAddVar(tokens)
+    -- tokens: { 'addvar', scope, name, '=', value }
+    if #tokens < 5 then
+        return AddVarUsage()
+    end
+
+    local scope, name, eq, val = unpack(tokens, 2, 5)
+
+    local varIsGlobal
+    if scope == 'global' or scope == 'g' then
+        varIsGlobal = true
+    elseif scope ~= 'char' and scope ~= 'c' then
+        print('Invalid input: ' .. scope)
+        AddVarUsage()
+        return
+    end
+
+    if name:match('[^a-z]') then
+        print('Invalid input: ' .. name)
+        print('Variable name can only contain letters!')
+        return
+    end
+
+    if eq ~= '=' then
+        print('Invalid input: ' .. eq)
+        print('You must use an equals sign!')
+        return
+    end
+
+    if val:match('[a-z]') then
+        val = self:ApplyVariables(val)
+    end
+    local evalParam = EvalString(val)
+    if not tonumber(evalParam) then
+        print('Invalid input: ' .. tokens[5])
+        print('Variables can only be set to numbers or existing variables!')
+        return
+    end
+
+    local saveLocation, saveLocationStr = self.pdb, '[Character] '
+    if varIsGlobal then
+        saveLocation, saveLocationStr = self.db.global, '[Global] '
+    end
+    if evalParam ~= 0 then
+        saveLocation[name] = evalParam
+        print(saveLocationStr .. 'set \'' .. name .. '\' to ' .. evalParam)
+    else -- Variables set to 0 are just wiped out
+        saveLocation[name] = nil
+        print(saveLocationStr .. 'Reset variable: ' .. name)
+    end
+end
+
+function SimpleCalc:HandleClearVar(tokens)
+    -- tokens: { 'clearvar' [, scope] }
+    local scope = tokens[2]
+    if scope == 'global' or scope == 'g' then
+        SimpleCalcDB.global = {}
+        print('Global user variables cleared!')
+    elseif scope == 'char' or scope == 'c' then
+        SimpleCalcDB.profiles[self.charKey] = {}
+        print('Character user variables cleared!')
+    else
+        SimpleCalcDB.global, SimpleCalcDB.profiles[self.charKey] = {}, {}
+        print('All user variables cleared!')
     end
 end
 
@@ -390,6 +397,4 @@ function SimpleCalc:Calculate(input)
     return EvalString(self:ApplyVariables(input))
 end
 
-EventUtil.ContinueOnAddOnLoaded(addonName, function()
-    SimpleCalc:OnLoad()
-end)
+SimpleCalc:OnLoad()
